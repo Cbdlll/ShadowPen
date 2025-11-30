@@ -1,0 +1,61 @@
+<h1>Help Center</h1>
+
+<div style="max-width: 800px; margin: 0 auto;">
+    <p>Welcome to the Lumina Help Center. How can we assist you today?</p>
+
+    <div style="margin-bottom: 2rem;">
+        <h3>Frequently Asked Questions</h3>
+        <div class="faq-item" style="background: var(--card-bg); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+            <h4 style="margin-top: 0;">How do I upload photos?</h4>
+            <p>You can upload photos using the form on the home page. Supported formats are JPG and PNG.</p>
+        </div>
+        <div class="faq-item" style="background: var(--card-bg); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+            <h4 style="margin-top: 0;">Is my data safe?</h4>
+            <p>We take security seriously. All your data is stored securely.</p>
+        </div>
+    </div>
+
+    <div id="topic-display" style="display: none; background: var(--accent-variant); padding: 1rem; border-radius: 4px; margin-bottom: 2rem;">
+        <h4 style="margin-top: 0; color: #fff;">Viewing Topic:</h4>
+        <div id="current-topic" style="color: #fff;"></div>
+    </div>
+
+    <div style="background: var(--card-bg); padding: 2rem; border-radius: 8px;">
+        <h3>Quick Topic Filter</h3>
+        <p>Filter help topics by keyword:</p>
+        <form id="topic-form" onsubmit="event.preventDefault(); updateTopic();">
+            <input type="text" id="topic-input" placeholder="Enter topic (e.g., billing, account)">
+            <button type="submit" class="btn">Filter</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Vuln #10: DOM XSS
+    // The application reads the 'topic' parameter from the URL and displays it using innerHTML.
+    
+    function getParameterByName(name, url = window.location.href) {
+        name = name.replace(/[\[\]]/g, '\\$&');
+        var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, ' '));
+    }
+
+    function updateTopic() {
+        const input = document.getElementById('topic-input');
+        const topic = input.value;
+        if (topic) {
+            window.location.search = '?topic=' + encodeURIComponent(topic);
+        }
+    }
+
+    const currentTopic = getParameterByName('topic');
+    if (currentTopic) {
+        document.getElementById('topic-display').style.display = 'block';
+        // DANGEROUS: Assigning directly to innerHTML
+        document.getElementById('current-topic').innerHTML = currentTopic;
+        document.getElementById('topic-input').value = currentTopic;
+    }
+</script>

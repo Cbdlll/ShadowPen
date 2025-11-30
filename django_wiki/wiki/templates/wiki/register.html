@@ -1,0 +1,30 @@
+{% extends 'wiki/base.html' %}
+
+{% block content %}
+<h1>Register</h1>
+
+{% if error %}
+<div class="message">{{ error }}</div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    <div>
+        <label>Username:</label>
+        <input type="text" name="username" required>
+    </div>
+    <div>
+        <label>Email (optional):</label>
+        <input type="text" name="email">
+    </div>
+    <div>
+        <label>Password:</label>
+        <input type="password" name="password" required>
+    </div>
+    <button type="submit" class="btn">Register</button>
+</form>
+
+<p style="margin-top: 20px;">
+    Already have an account? <a href="{% url 'login' %}">Login here</a>
+</p>
+{% endblock %}

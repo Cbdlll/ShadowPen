@@ -1,0 +1,34 @@
+<%- include('header') %>
+
+    <h1>User Profile</h1>
+
+    <div class="card">
+        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+            <div
+                style="width: 64px; height: 64px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; margin-right: 1rem;">
+                <%= user.username.charAt(0) %>
+            </div>
+            <div>
+                <h2 style="margin: 0;">
+                    <%= user.username %>
+                </h2>
+                <p style="margin: 0; color: var(--text-muted);">Administrator</p>
+            </div>
+        </div>
+
+        <h3>Bio</h3>
+        <div class="bio">
+            <!-- VULNERABLE: Bio is output without escaping -->
+            <%- user.bio %>
+        </div>
+
+        <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--border);">
+
+        <h3>Update Bio</h3>
+        <form action="/user/update" method="POST">
+            <textarea name="bio" rows="3"><%= user.bio %></textarea>
+            <button type="submit" class="btn">Update Bio</button>
+        </form>
+    </div>
+
+    <%- include('footer') %>

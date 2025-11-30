@@ -1,0 +1,19 @@
+{{ template "header.html" . }}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="alert alert-danger shadow-sm">
+            <h4 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Oops! Something went wrong.</h4>
+            <hr>
+            <!-- Vulnerability 9: Reflected XSS in Error Message -->
+            <p class="mb-0">{{ if .Msg }}{{ .Msg | unsafe }}{{ else }}An unexpected error occurred. Please try again
+                later.{{ end }}</p>
+        </div>
+        <div class="text-center">
+            <a href="/" class="btn btn-primary">Return to Dashboard</a>
+            <a href="/tickets" class="btn btn-outline-secondary ms-2">View Tickets</a>
+        </div>
+    </div>
+</div>
+
+{{ template "footer.html" . }}

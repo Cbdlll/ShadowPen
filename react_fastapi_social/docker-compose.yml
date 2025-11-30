@@ -1,0 +1,15 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8000"
+    environment:
+      - ALLOW_ORIGINS=http://localhost:3000
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3007:80"
+    depends_on:
+      - backend

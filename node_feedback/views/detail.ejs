@@ -1,0 +1,22 @@
+<%- include('header') %>
+
+    <div style="margin-bottom: 1rem;">
+        <!-- VULNERABLE: Return URL is reflected in href -->
+        <a href="<%- returnUrl %>" style="color: var(--text-muted); text-decoration: none;">&larr; Back</a>
+    </div>
+
+    <div class="card">
+        <h1><%- feedback.title %></h1>
+        <div class="feedback-meta"
+            style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+            <!-- VULNERABLE: Author is output without escaping -->
+            Submitted by <strong><%- feedback.author %></strong>
+        </div>
+
+        <div class="description">
+            <!-- VULNERABLE: Description is output as raw HTML (from unsafe markdown) -->
+            <%- description %>
+        </div>
+    </div>
+
+    <%- include('footer') %>

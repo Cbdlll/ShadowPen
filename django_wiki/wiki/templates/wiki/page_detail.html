@@ -1,0 +1,66 @@
+{% extends 'wiki/base.html' %}
+
+{% block content %}
+<!-- Vulnerability #4: Reflected XSS in Breadcrumb -->
+<div style="font-size: 14px; color: #999; margin-bottom: 20px;">
+    <a href="{% url 'index' %}">Home</a> / {{ breadcrumb | safe }} / {{ page.title | safe }}
+</div>
+
+<!-- Vulnerability #1: Stored XSS in Page Title -->
+<h1>{{ page.title | safe }}</h1>
+
+<div style="margin-bottom: 30px; color: #666;">
+    By {{ page.author.username }} | Category: {{ page.category | safe }} | <a
+        href="{% url 'page_edit' pk=page.pk %}">Edit</a>
+</div>
+
+<!-- Vulnerability #2: Stored XSS in Page Content -->
+<div class="page-content" style="line-height: 1.6;">
+    {{ page.content | safe }}
+</div>
+
+<hr style="margin: 40px 0; border: none; border-top: 1px solid #eee;">
+
+<h3>Comments</h3>
+<div class="comments">
+    {% for comment in comments %}
+    <div style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
+        <div style="font-weight: bold; margin-bottom: 5px;">
+            <!-- Vulnerability #5: Stored XSS in Author Name -->
+            {{ comment.author_name | safe }}
+            <span style="font-weight: normal; color: #999; font-size: 12px;">{{ comment.created_at|timesince }}
+                ago</span>
+        </div>
+        <!-- Vulnerability #3: Stored XSS in Comment Content -->
+        <div>{{ comment.content | safe }}</div>
+
+        <!-- Vulnerability #7: Stored XSS in User Signature (if author is a user, but here we use comment author name which is free text. 
+                     Let's simulate signature if the comment author matches a real user, or just display the page author's signature for fun/vulnerability) -->
+        {% if page.author.profile.signature %}
+        <div style="margin-top: 10px; font-size: 12px; color: #777; border-top: 1px dashed #ddd; padding-top: 5px;">
+            -- <br>
+            {{ page.author.profile.signature | safe }}
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <p>No comments yet.</p>
+    {% endfor %}
+</div>
+
+{% if user.is_authenticated %}
+<form method="post" style="margin-top: 30px; background: #f5f5f5; padding: 20px; border-radius: 8px;">
+    {% csrf_token %}
+    <h4>Add a Comment</h4>
+    <input type="text" name="author_name" placeholder="Your Name" required>
+    <textarea name="content" rows="3" placeholder="Write a comment..." required></textarea>
+    <button type="submit" class="btn">Post Comment</button>
+</form>
+{% else %}
+<div style="margin-top: 30px; background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px;">
+    <strong>⚠️ Login Required:</strong> Please <a href="{% url 'login' %}?next={{ request.path }}"
+        style="color: #856404; font-weight: bold;">login</a> or <a href="{% url 'register' %}"
+        style="color: #856404; font-weight: bold;">register</a> to post comments.
+</div>
+{% endif %}
+{% endblock %}

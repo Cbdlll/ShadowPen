@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Tech News Portal{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">TechNews<span style="color: var(--primary)">.</span></a>
+        <div class="navbar-menu">
+            <a href="/">Home</a>
+            <a href="/?category=AI">AI</a>
+            <a href="/?category=Hardware">Hardware</a>
+            <a href="/subscribe">Newsletter</a>
+            <a href="/profile">Profile</a>
+            <a href="/login">Login</a>
+            <form action="/search" method="GET" style="display: inline-block; margin-left: 1rem;">
+                <input type="text" name="q" placeholder="Search..." style="padding: 0.25rem; border-radius: 3px; border: none;">
+            </form>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2023 Tech News Portal. All rights reserved.</p>
+        <p><a href="/admin" style="color: #666;">Admin Panel</a></p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,61 @@
+{{ template "header.html" . }}
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-box-arrow-in-right"></i> Login to Support System</h4>
+            </div>
+            <div class="card-body">
+                {{ if .Username }}
+                <div class="alert alert-warning">
+                    <strong>Already Logged In:</strong> You are currently logged in as <strong>{{ .Username | unsafe
+                        }}</strong>. You can logout and login with a different username, or <a href="/"
+                        class="alert-link">return to dashboard</a>.
+                </div>
+                {{ else }}
+                <div class="alert alert-info">
+                    <strong>Demo Mode:</strong> This is a demonstration system. You can login with any username and
+                    password. No actual authentication is performed.
+                </div>
+                {{ end }}
+
+                {{ if .Redirect }}
+                <div class="alert alert-warning">
+                    <strong>Redirect Notice:</strong> After login, you will be redirected to:
+                    <code>{{ .Redirect | unsafe }}</code>
+                </div>
+                {{ end }}
+
+                <form action="/login" method="POST">
+                    <!-- Vulnerability 7: Reflected XSS via Redirect -->
+                    <input type="hidden" name="redirect" value="{{ .Redirect | unsafe }}">
+
+                    <div class="mb-3">
+                        <label class="form-label">Username <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="username" required
+                            placeholder="Enter your username">
+                        <small class="text-muted">Any username will work in demo mode</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" name="password" placeholder="Any password works">
+                        <small class="text-muted">Password is not validated in demo mode</small>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">Login</button>
+                    </div>
+                </form>
+
+                <hr>
+                <div class="text-center">
+                    <small class="text-muted">
+                        Don't have an account? <a href="/">Continue as guest</a> or use any username to login.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ template "footer.html" . }}

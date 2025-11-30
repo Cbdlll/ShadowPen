@@ -1,0 +1,117 @@
+{{ template "header.html" . }}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <!-- Vulnerability 1: Stored XSS in Subject -->
+                <h4 class="mb-0">Ticket #{{ .Ticket.ID }}: {{ .Ticket.Subject | unsafe }}</h4>
+                <!-- Vulnerability 2: Priority Color Injection (Style Injection) -->
+                <!-- If priority is "High; background: red", it injects style -->
+                <span class="badge" style="background-color: {{ if eq .Ticket.Priority " High" }}#e74c3c{{ else if eq
+                    .Ticket.Priority "Medium" }}#f39c12{{ else }}#2ecc71{{ end }}; color: white;">
+                    {{ .Ticket.Priority | unsafe }}
+                </span>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Description</h5>
+                <!-- Vulnerability 3: Stored XSS in Description -->
+                <p class="card-text">{{ .Ticket.Description | unsafe }}</p>
+            </div>
+            <div class="card-footer text-muted">
+                Created: {{ .Ticket.CreatedAt.Format "2006-01-02 15:04" }}
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Discussion</h5>
+            </div>
+            <div class="card-body">
+                {{ if .Ticket.Comments }}
+                <div class="mb-3">
+                    <small class="text-muted">{{ len .Ticket.Comments }} comment(s) on this ticket</small>
+                </div>
+                <div class="chat-box mb-3">
+                    {{ range .Ticket.Comments }}
+                    <div class="card mb-2">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between">
+                                <!-- Vulnerability 4: Stored XSS in Chat Author/Content -->
+                                <strong>{{ .Author | unsafe }}</strong>
+                                <small class="text-muted">{{ .CreatedAt.Format "2006-01-02 15:04" }}</small>
+                            </div>
+                            <p class="mb-0 mt-2">{{ .Content | unsafe }}</p>
+                        </div>
+                    </div>
+                    {{ end }}
+                </div>
+                {{ else }}
+                <div class="alert alert-light">
+                    <p class="mb-0 text-muted">No comments yet. Be the first to comment!</p>
+                </div>
+                {{ end }}
+
+                {{ if .Username }}
+                <form action="/tickets/{{ .Ticket.ID }}/chat" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Add a comment</label>
+                        <textarea class="form-control" name="content" rows="3" required
+                            placeholder="Type your comment here..."></textarea>
+                        <small class="text-muted">Posting as: <strong>{{ .Username | unsafe }}</strong></small>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Post Comment</button>
+                </form>
+                {{ else }}
+                <div class="alert alert-warning">
+                    <strong><i class="bi bi-exclamation-triangle"></i> Login Required:</strong> You must <a
+                        href="/login?redirect=/tickets/{{ .Ticket.ID }}" class="alert-link">login</a> to add comments to
+                    this ticket.
+                </div>
+                {{ end }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                Ticket Info
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <strong>Status:</strong>
+                    {{ if eq .Ticket.Status "Open" }}
+                    <span class="badge bg-success ms-2">{{ .Ticket.Status }}</span>
+                    {{ else }}
+                    <span class="badge bg-secondary ms-2">{{ .Ticket.Status }}</span>
+                    {{ end }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Priority:</strong>
+                    {{ if eq .Ticket.Priority "High" }}
+                    <span class="badge bg-danger ms-2">{{ .Ticket.Priority | unsafe }}</span>
+                    {{ else if eq .Ticket.Priority "Medium" }}
+                    <span class="badge bg-warning text-dark ms-2">{{ .Ticket.Priority | unsafe }}</span>
+                    {{ else }}
+                    <span class="badge bg-info text-dark ms-2">{{ .Ticket.Priority | unsafe }}</span>
+                    {{ end }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Created:</strong><br>
+                    <small class="text-muted">{{ .Ticket.CreatedAt.Format "2006-01-02 15:04:05" }}</small>
+                </li>
+                <li class="list-group-item">
+                    <strong>Last Updated:</strong><br>
+                    <small class="text-muted">{{ .Ticket.UpdatedAt.Format "2006-01-02 15:04:05" }}</small>
+                </li>
+                <li class="list-group-item">
+                    <strong>Comments:</strong>
+                    <span class="badge bg-primary ms-2">{{ len .Ticket.Comments }}</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{{ template "footer.html" . }}

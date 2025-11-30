@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+playwright
+httpx
+aiohttp
+openai
+python-dotenv
+beautifulsoup4
+websockets

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div
+    style="max-width: 400px; margin: 4rem auto; background: white; padding: 2rem; border-radius: 6px; border: 1px solid var(--border);">
+    <h1 style="text-align: center;">Login</h1>
+
+    <!-- Vulnerability 6: Login Redirect (Reflected/Attribute) -->
+    <!-- If 'next' contains "><script>...", it breaks out of the action attribute -->
+    <form action="{{ next | safe }}" method="POST">
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem;">Username</label>
+            <input type="text" name="username" class="input">
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem;">Password</label>
+            <input type="password" name="password" class="input">
+        </div>
+        <button type="button" class="btn" style="width: 100%;"
+            onclick="alert('Demo only - no real login')">Login</button>
+    </form>
+</div>
+{% endblock %}

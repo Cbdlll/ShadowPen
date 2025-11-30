@@ -1,0 +1,58 @@
+{{ template "header.html" . }}
+
+{{ if not .Username }}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="alert alert-warning">
+            <strong><i class="bi bi-exclamation-triangle"></i> Authentication Required:</strong> This is an admin area.
+            Please <a href="/login?redirect=/admin/logs" class="alert-link">login</a> to access system logs.
+        </div>
+    </div>
+</div>
+{{ end }}
+<div class="row">
+    <div class="col-md-12">
+        <h2 class="text-danger">Admin System Logs</h2>
+        <p class="text-muted">Restricted access area. Monitoring system activity.</p>
+        {{ if .Username }}
+        <p class="text-muted">Logged in as: <strong>{{ .Username | unsafe }}</strong></p>
+        {{ end }}
+
+        {{ if .Logs }}
+        <div class="mb-3">
+            <p class="text-muted">Showing the last <strong>{{ len .Logs }}</strong> log entries.</p>
+        </div>
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table table-striped table-sm mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Timestamp</th>
+                            <th>Path</th>
+                            <th>User Agent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .Logs }}
+                        <tr>
+                            <td>{{ .ID }}</td>
+                            <td>{{ .CreatedAt.Format "2006-01-02 15:04:05" }}</td>
+                            <td><code>{{ .Path }}</code></td>
+                            <!-- Vulnerability 8: Stored XSS via User-Agent -->
+                            <td><small>{{ .UserAgent | unsafe }}</small></td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {{ else }}
+        <div class="alert alert-info">
+            <strong>No logs found.</strong> System logs will appear here as users access the system.
+        </div>
+        {{ end }}
+    </div>
+</div>
+
+{{ template "footer.html" . }}

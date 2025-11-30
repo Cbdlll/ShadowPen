@@ -1,0 +1,24 @@
+<h1>Search Photos</h1>
+
+<form action="/search" method="GET" style="margin-bottom: 2rem;">
+    <input type="text" name="q" placeholder="Search photos..." value="<%= @query %>">
+    <button type="submit" class="btn">Search</button>
+</form>
+
+<% if @query %>
+    <!-- Vuln #8: Reflected XSS in Search Query -->
+    <h2>Results for: <%= @query %></h2>
+    
+    <% if @results && @results.any? %>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+            <% @results.each do |photo| %>
+                <div style="background: var(--card-bg); padding: 1rem; border-radius: 4px;">
+                    <h3><%= photo['title'] %></h3>
+                    <p><%= photo['description'] %></p>
+                </div>
+            <% end %>
+        </div>
+    <% else %>
+        <p>No photos found.</p>
+    <% end %>
+<% end %>

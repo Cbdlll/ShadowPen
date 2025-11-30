@@ -1,0 +1,23 @@
+<h1>User Profile</h1>
+
+<div style="background: var(--card-bg); padding: 2rem; border-radius: 8px; max-width: 600px;">
+    <div style="display: flex; align-items: center; margin-bottom: 2rem;">
+        <div style="width: 80px; height: 80px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; margin-right: 1rem;">
+            U
+        </div>
+        <div>
+            <h2>Admin User</h2>
+            <!-- Vuln #9: Javascript Protocol XSS (href="javascript:...") -->
+            <a href="<%= @website %>" style="color: var(--accent);">Visit Website</a>
+        </div>
+    </div>
+
+    <h3>Edit Profile</h3>
+    <form action="/profile" method="POST">
+        <label>Website URL</label>
+        <input type="text" name="website" value="<%= @website %>" placeholder="https://example.com">
+        <p style="font-size: 0.8rem; color: #666;">Try setting this to <code>javascript:alert(1)</code></p>
+        
+        <button type="submit" class="btn">Update Profile</button>
+    </form>
+</div>

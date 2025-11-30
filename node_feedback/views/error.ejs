@@ -1,0 +1,12 @@
+<%- include('header') %>
+
+    <div style="text-align: center; margin-top: 4rem;">
+        <h1 style="color: #ef4444;">Error</h1>
+        <p>
+            <!-- VULNERABLE: Error message reflected -->
+            <%- error %>
+        </p>
+        <a href="/" class="btn" style="margin-top: 1rem;">Go Home</a>
+    </div>
+
+    <%- include('footer') %>

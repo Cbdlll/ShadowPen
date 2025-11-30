@@ -1,0 +1,16 @@
+services:
+  server:
+    build: ./server
+    ports:
+      - "8083:3001"
+    environment:
+      - NODE_ENV=production
+    restart: always
+
+  client:
+    build: ./client
+    ports:
+      - "8084:80"
+    depends_on:
+      - server
+    restart: always

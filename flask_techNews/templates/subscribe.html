@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 4rem auto; text-align: center;">
+    <h1>Subscribe to our Newsletter</h1>
+    <p>Get the latest tech news delivered to your inbox.</p>
+
+    <div id="msg" style="margin: 2rem 0; color: green; font-weight: bold;"></div>
+
+    <form id="subForm">
+        <input type="email" id="emailInput" class="input" placeholder="Enter your email">
+        <button type="submit" class="btn">Subscribe</button>
+    </form>
+
+    <!-- Vulnerability 5: Newsletter (DOM-based) -->
+    <script>
+        // Check for 'email' param in URL to show confirmation
+        const urlParams = new URLSearchParams(window.location.search);
+        const email = urlParams.get('email');
+
+        if (email) {
+            // VULNERABLE: writing user input directly to innerHTML
+            document.getElementById('msg').innerHTML = "Thanks for subscribing, " + email + "!";
+        }
+
+        document.getElementById('subForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const val = document.getElementById('emailInput').value;
+            window.location.href = "/subscribe?email=" + val;
+        });
+    </script>
+</div>
+{% endblock %}

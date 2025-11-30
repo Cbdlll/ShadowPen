@@ -1,0 +1,32 @@
+<%- include('header') %>
+
+    <h1>Submit Feedback</h1>
+
+    <div class="card">
+        <form action="/submit" method="POST">
+            <div>
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title" required placeholder="Feature request or bug report title">
+            </div>
+
+            <div>
+                <label for="description">Description (Markdown supported)</label>
+                <textarea id="description" name="description" rows="6" required
+                    placeholder="Describe your feedback..."></textarea>
+            </div>
+
+            <div>
+                <label for="author">Your Name</label>
+                <input type="text" id="author" name="author" required placeholder="John Doe">
+            </div>
+
+            <div>
+                <label for="tags">Tags (comma separated)</label>
+                <input type="text" id="tags" name="tags" placeholder="ui, bug, feature">
+            </div>
+
+            <button type="submit" class="btn">Submit Feedback</button>
+        </form>
+    </div>
+
+    <%- include('footer') %>

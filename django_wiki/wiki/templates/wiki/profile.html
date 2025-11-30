@@ -1,0 +1,54 @@
+{% extends 'wiki/base.html' %}
+
+{% block content %}
+<h1>User Profile: {{ user.username }}</h1>
+
+<div style="display: flex; gap: 40px; margin-bottom: 40px;">
+    <div style="flex: 1;">
+        <h3>Edit Profile</h3>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label>Bio (HTML allowed)</label>
+            <textarea name="bio" rows="5">{{ user.profile.bio }}</textarea>
+
+            <label>Signature (HTML allowed)</label>
+            <input type="text" name="signature" value="{{ user.profile.signature }}">
+
+            <label>Avatar (SVG allowed)</label>
+            <input type="file" name="avatar">
+
+            <button type="submit" class="btn" style="margin-top: 10px;">Save Profile</button>
+        </form>
+    </div>
+
+    <div style="flex: 1; background: #fafafa; padding: 20px; border-radius: 8px;">
+        <h3>Preview</h3>
+
+        {% if user.profile.avatar %}
+        <div style="margin-bottom: 20px;">
+            <strong>Avatar:</strong><br>
+            <!-- Vulnerability #9: Stored XSS via SVG Upload -->
+            <!-- We embed it directly to allow script execution if it's an SVG -->
+            <object data="{{ user.profile.avatar.url }}" type="image/svg+xml" width="150" height="150"
+                style="border: 1px solid #ddd;">
+                <img src="{{ user.profile.avatar.url }}" width="150">
+            </object>
+            <br>
+            <a href="{{ user.profile.avatar.url }}" target="_blank">Direct Link</a>
+        </div>
+        {% endif %}
+
+        <div style="margin-bottom: 20px;">
+            <strong>Bio:</strong><br>
+            <!-- Vulnerability #8: Stored XSS in Bio -->
+            {{ user.profile.bio | safe }}
+        </div>
+
+        <div>
+            <strong>Signature:</strong><br>
+            <!-- Vulnerability #7: Stored XSS in Signature -->
+            {{ user.profile.signature | safe }}
+        </div>
+    </div>
+</div>
+{% endblock %}

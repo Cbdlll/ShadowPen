@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::div})}">
+<div>
+    <h2>Employee Directory</h2>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        <div class="col" th:each="employee : ${employees}">
+            <div class="card h-100">
+                <!-- Vuln: ImageUrl Stored XSS (if malicious URL) -->
+                <img th:src="${employee.imageUrl}" class="card-img-top" alt="Employee Image"
+                    onerror="/* potentially vulnerable if src breaks out */">
+                <div class="card-body">
+                    <!-- Vuln 2: Name Stored XSS -->
+                    <h5 class="card-title" th:utext="${employee.name}">Name</h5>
+                    <p class="card-text" th:text="${employee.position}">Position</p>
+                    <a th:href="@{/profile/{id}(id=${employee.id})}" class="btn btn-primary">View Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination">
+            <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
+            <li class="page-item"><a class="page-link" href="?page=2">2</a></li>
+            <!-- Vuln 5: Pagination Reflected XSS -->
+            <li class="page-item disabled"><span class="page-link">Current: <span
+                        th:utext="${currentPage}">1</span></span></li>
+        </ul>
+    </nav>
+</div>
+
+</html>

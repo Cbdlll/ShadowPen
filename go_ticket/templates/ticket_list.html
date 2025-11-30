@@ -1,0 +1,90 @@
+{{ template "header.html" . }}
+
+{{ if not .Username }}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="alert alert-info">
+            <strong><i class="bi bi-info-circle"></i> Guest Access:</strong> You are browsing tickets as a guest. <a
+                href="/login" class="alert-link">Login</a> to create tickets and participate in discussions.
+        </div>
+    </div>
+</div>
+{{ end }}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>All Tickets</h2>
+        <p class="text-muted">Browse and search through all support tickets</p>
+    </div>
+    <div class="col-md-4">
+        <form action="/tickets" method="GET" class="d-flex">
+            <!-- Vulnerability 10: Reflected XSS in Filter -->
+            <input type="text" class="form-control me-2" name="filter" placeholder="Filter by subject..."
+                value="{{ .Filter | unsafe }}">
+            <button class="btn btn-outline-secondary" type="submit">Filter</button>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        {{ if .Filter }}
+        <div class="alert alert-info">
+            Showing results for: <strong>{{ .Filter | unsafe }}</strong>
+            <a href="/tickets" class="btn btn-sm btn-outline-secondary ms-2">Clear Filter</a>
+        </div>
+        {{ end }}
+
+        {{ if .Tickets }}
+        <table class="table table-hover bg-white rounded shadow-sm">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Subject</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .Tickets }}
+                <tr>
+                    <td>#{{ .ID }}</td>
+                    <!-- Vulnerability 1: Stored XSS in Subject -->
+                    <td>{{ .Subject | unsafe }}</td>
+                    <td>
+                        {{ if eq .Priority "High" }}
+                        <span class="badge bg-danger">{{ .Priority }}</span>
+                        {{ else if eq .Priority "Medium" }}
+                        <span class="badge bg-warning text-dark">{{ .Priority }}</span>
+                        {{ else }}
+                        <span class="badge bg-info text-dark">{{ .Priority }}</span>
+                        {{ end }}
+                    </td>
+                    <td>
+                        {{ if eq .Status "Open" }}
+                        <span class="badge bg-success">{{ .Status }}</span>
+                        {{ else }}
+                        <span class="badge bg-secondary">{{ .Status }}</span>
+                        {{ end }}
+                    </td>
+                    <td><small class="text-muted">{{ .CreatedAt.Format "2006-01-02" }}</small></td>
+                    <td><a href="/tickets/{{ .ID }}" class="btn btn-sm btn-outline-primary">View</a></td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+        {{ else }}
+        <div class="alert alert-warning">
+            <strong>No tickets found.</strong>
+            {{ if .Filter }}
+            Try adjusting your filter or <a href="/tickets">view all tickets</a>.
+            {{ else }}
+            Be the first to create a support ticket!
+            {{ end }}
+        </div>
+        {{ end }}
+    </div>
+</div>
+
+{{ template "footer.html" . }}

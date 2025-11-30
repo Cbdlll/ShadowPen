@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::div})}">
+<div>
+    <h2>Admin Dashboard</h2>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Add Employee</h3>
+            <form action="/admin/employee" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-control" name="name" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Position</label>
+                    <input type="text" class="form-control" name="position" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" name="email" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Image URL</label>
+                    <input type="text" class="form-control" name="imageUrl" value="https://via.placeholder.com/150">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Bio (HTML allowed)</label>
+                    <textarea class="form-control" name="bio" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Employee</button>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <h3>Post Announcement</h3>
+            <form action="/admin/announcement" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Content (HTML allowed)</label>
+                    <textarea class="form-control" name="content" rows="3" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-success">Post</button>
+            </form>
+
+            <h3 class="mt-4">Submit Feedback</h3>
+            <form action="/admin/feedback" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Feedback</label>
+                    <textarea class="form-control" name="content" rows="2" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-info">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <hr>
+
+    <h3>Access Logs</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Referer</th>
+                <th>User-Agent</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="log : ${logs}">
+                <td th:text="${#temporals.format(log.accessedAt, 'HH:mm:ss')}">Time</td>
+                <!-- Vuln 6: Referer Stored XSS -->
+                <td th:utext="${log.referer}">Referer</td>
+                <!-- Vuln 7: User-Agent Stored XSS -->
+                <td th:utext="${log.userAgent}">UA</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Feedback Received</h3>
+    <ul class="list-group">
+        <li class="list-group-item" th:each="f : ${feedbacks}">
+            <!-- Vuln 8: Feedback Stored XSS -->
+            <span th:utext="${f.content}">Content</span>
+        </li>
+    </ul>
+</div>
+
+</html>

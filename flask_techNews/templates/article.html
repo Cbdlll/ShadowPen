@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<article style="background: white; padding: 2rem; border-radius: 6px; border: 1px solid var(--border);">
+    <span class="tag">{{ article.category }}</span>
+    <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">{{ article.title }}</h1>
+    <div style="color: #666; margin-bottom: 2rem;">
+        By {{ article.author }} | {{ article.created_at }}
+    </div>
+
+    <img src="{{ article.image_url }}" style="width: 100%; border-radius: 6px; margin-bottom: 1rem;">
+
+    <!-- Vulnerability 9: Image Credit (Stored) -->
+    <div style="font-size: 0.8rem; color: #888; margin-bottom: 2rem; text-align: right;">
+        {{ article.credit | safe }}
+    </div>
+
+    <div style="font-size: 1.1rem; line-height: 1.8;">
+        {{ article.content }}
+    </div>
+</article>
+
+<section style="margin-top: 3rem;">
+    <h3>Comments</h3>
+
+    <form method="POST" style="margin-bottom: 2rem; background: #f9f9f9; padding: 1.5rem; border-radius: 6px;">
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem;">Name</label>
+            <input type="text" name="username" class="input" placeholder="Your Name">
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem;">Comment</label>
+            <textarea name="content" class="input" style="height: 100px; max-width: 100%;"
+                placeholder="Join the discussion..."></textarea>
+        </div>
+        <button type="submit" class="btn">Post Comment</button>
+    </form>
+
+    {% for comment in comments %}
+    <div style="border-bottom: 1px solid var(--border); padding: 1rem 0;">
+        <strong>{{ comment.username }}</strong> <span style="color: #999; font-size: 0.8rem;">{{ comment.created_at
+            }}</span>
+        <!-- Vulnerability 2: Article Comments (Stored) -->
+        <div style="margin-top: 0.5rem;">
+            {{ comment.content | safe }}
+        </div>
+    </div>
+    {% endfor %}
+</section>
+{% endblock %}

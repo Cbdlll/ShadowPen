@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8087:8080"
+    networks:
+      - shop-network
+    environment:
+      - JAVA_OPTS=-Djava.security.egd=file:/dev/./urandom
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3009:80"
+    networks:
+      - shop-network
+    depends_on:
+      - backend
+
+networks:
+  shop-network:
+    driver: bridge

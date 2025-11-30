@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::div})}">
+<div>
+    <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-5">
+            <h1 class="display-5 fw-bold">Welcome to the Employee Directory</h1>
+            <p class="col-md-8 fs-4">Find your colleagues and connect.</p>
+            <a class="btn btn-primary btn-lg" href="/directory" role="button">Browse Directory</a>
+        </div>
+    </div>
+
+    <h2>Announcements</h2>
+    <div class="row">
+        <div class="col-md-12" th:each="announcement : ${announcements}">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title" th:text="${#temporals.format(announcement.postedAt, 'yyyy-MM-dd HH:mm')}">
+                        Date</h5>
+                    <!-- Vuln 4: Stored XSS in Announcement -->
+                    <p class="card-text" th:utext="${announcement.content}">Content</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vuln 10: JS Context XSS -->
+    <script th:inline="javascript">
+        var pageName = [[${ pageName }]]; // Vulnerable if pageName contains quotes/scripts
+        console.log("Current page: " + pageName);
+    </script>
+</div>
+
+</html>

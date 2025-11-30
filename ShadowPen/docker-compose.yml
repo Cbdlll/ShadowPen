@@ -1,0 +1,23 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      - BASE_URL=${BASE_URL}
+      - API_KEY=${API_KEY}
+      - MODEL=${MODEL}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - BACKEND_URL=http://backend:8000
+      - WS_BACKEND_URL=ws://backend:8000
+    depends_on:
+      - backend

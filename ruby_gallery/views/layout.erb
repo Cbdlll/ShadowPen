@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina | Minimalist Gallery</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent: #bb86fc;
+            --accent-variant: #3700b3;
+            --error: #cf6679;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            padding: 1rem 2rem;
+            display: flex;
+            justify_content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+            text-decoration: none;
+            letter-spacing: 2px;
+        }
+
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--accent);
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: #000;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background-color: #9965f4;
+        }
+
+        input, textarea {
+            background-color: #2c2c2c;
+            border: 1px solid #333;
+            color: var(--text-primary);
+            padding: 0.5rem;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 1rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            background-color: var(--accent-variant);
+            color: #fff;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="/" class="logo">LUMINA</a>
+    <nav>
+        <a href="/">Gallery</a>
+        <a href="/search">Search</a>
+        <a href="/guestbook">Guestbook</a>
+        <a href="/profile">Profile</a>
+        <a href="/faq">Help</a>
+    </nav>
+</header>
+
+<main>
+    <!-- Vuln #1: Reflected XSS in 'msg' parameter -->
+    <!-- We use <%= %> which in standard Sinatra/ERB is escaped by default ONLY if using Rails or specific config. 
+         Sinatra default ERB does NOT escape by default unless :escape_html is set. 
+         We explicitly did NOT set :escape_html in app.rb, so this is vulnerable. -->
+    <% if params[:msg] %>
+        <div class="alert">
+            <%= params[:msg] %>
+        </div>
+    <% end %>
+
+    <%= yield %>
+</main>
+
+<footer>
+    &copy; 2023 Lumina Gallery. Minimalist & Vulnerable.
+</footer>
+
+</body>
+</html>

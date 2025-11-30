@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::div})}">
+<div>
+    <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">Error!</h4>
+        <!-- Vuln 9: Error Reflected XSS -->
+        <p th:utext="${message}">Error message</p>
+        <hr>
+        <p class="mb-0">Please contact the administrator.</p>
+    </div>
+</div>
+
+</html>

@@ -1,0 +1,29 @@
+<h1>Guestbook</h1>
+<p>Leave a note for the artist.</p>
+
+<div style="margin-bottom: 3rem;">
+    <form action="/guestbook" method="POST" style="background: var(--card-bg); padding: 2rem; border-radius: 8px;">
+        <label>Your Name</label>
+        <input type="text" name="name" placeholder="Name">
+        
+        <label>Message</label>
+        <textarea name="message" rows="4" placeholder="Write something..."></textarea>
+        
+        <button type="submit" class="btn">Sign Guestbook</button>
+    </form>
+</div>
+
+<div class="entries">
+    <% @entries.each do |entry| %>
+        <div style="border-bottom: 1px solid #333; padding: 1rem 0;">
+            <!-- Vuln #6: Stored XSS in Name -->
+            <strong style="color: var(--accent);"><%= entry['name'] %></strong>
+            <span style="color: #666; font-size: 0.8rem; margin-left: 0.5rem;">says:</span>
+            
+            <!-- Vuln #7: Stored XSS in Message -->
+            <div style="margin-top: 0.5rem; padding-left: 1rem; border-left: 2px solid var(--accent);">
+                <%= entry['message'] %>
+            </div>
+        </div>
+    <% end %>
+</div>

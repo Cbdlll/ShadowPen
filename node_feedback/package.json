@@ -1,0 +1,16 @@
+{
+  "name": "feedback-board-vulnerable",
+  "version": "1.0.0",
+  "description": "A vulnerable SaaS Feedback Board application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ejs": "^3.1.9",
+    "sqlite3": "^5.1.6",
+    "body-parser": "^1.20.2",
+    "marked": "^4.3.0"
+  }
+}

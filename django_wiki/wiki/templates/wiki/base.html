@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internal Team Wiki</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #37352f;
+            --sidebar-bg: #f7f7f5;
+            --border-color: #e9e9e7;
+            --primary-color: #2eaadc;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 240px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 40px 60px;
+            max-width: 900px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-weight: 600;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+            border-bottom: 1px solid var(--border-color);
+            transition: border-color 0.2s;
+        }
+
+        a:hover {
+            border-bottom-color: var(--text-color);
+        }
+
+        .nav-link {
+            display: block;
+            padding: 6px 0;
+            color: #6b6b6b;
+            font-size: 14px;
+        }
+
+        .nav-link:hover {
+            color: var(--text-color);
+            background-color: rgba(0, 0, 0, 0.04);
+            border-radius: 4px;
+            border-bottom: none;
+            padding-left: 8px;
+            margin-left: -8px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            border-bottom: none;
+        }
+
+        input[type="text"],
+        textarea,
+        input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        .message {
+            padding: 10px;
+            background-color: #ffeeba;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <h3>Team Wiki</h3>
+        <nav>
+            <a href="{% url 'index' %}" class="nav-link">🏠 Home</a>
+            <a href="{% url 'page_create' %}" class="nav-link">➕ New Page</a>
+            <a href="{% url 'profile' %}" class="nav-link">👤 Profile</a>
+            {% if user.is_authenticated %}
+            <div style="margin-top: 20px; font-size: 12px; color: #999;">
+                Logged in as {{ user.username }}
+            </div>
+            <a href="{% url 'logout' %}" class="nav-link">🚪 Logout</a>
+            {% else %}
+            <a href="{% url 'login' %}" class="nav-link">🔑 Login</a>
+            <a href="{% url 'register' %}" class="nav-link">📝 Register</a>
+            {% endif %}
+        </nav>
+    </div>
+    <div class="main-content">
+        <!-- Vulnerability #10: Reflected XSS in Error Message -->
+        {% if request.GET.msg %}
+        <div class="message">
+            {{ request.GET.msg | safe }}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+
+</html>

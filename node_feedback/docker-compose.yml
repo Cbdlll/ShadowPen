@@ -1,0 +1,8 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8082:3000"
+    volumes:
+      # No volumes for persistence as requested
+      - /app/node_modules

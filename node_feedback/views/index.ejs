@@ -1,0 +1,30 @@
+<%- include('header') %>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1>Product Feedback</h1>
+        <a href="/submit" class="btn">Submit Feedback</a>
+    </div>
+
+    <% feedbacks.forEach(function(feedback) { %>
+        <div class="card feedback-item">
+            <h3>
+                <a href="/feedback/<%= feedback.id %>?returnUrl=/">
+                    <!-- VULNERABLE: Title is output without escaping -->
+                    <%- feedback.title %>
+                </a>
+            </h3>
+            <div class="feedback-meta">
+                Posted by <%= feedback.author %> on <%= new Date(feedback.created_at).toLocaleDateString() %>
+                        <div style="margin-top: 0.5rem;">
+                            <% if (feedback.tags) { %>
+                                <% feedback.tags.split(',').forEach(function(tag) { %>
+                                    <!-- VULNERABLE: Tags are output without escaping -->
+                                    <span class="tag"><%- tag.trim() %></span>
+                                    <% }); %>
+                                        <% } %>
+                        </div>
+            </div>
+        </div>
+        <% }); %>
+
+            <%- include('footer') %>

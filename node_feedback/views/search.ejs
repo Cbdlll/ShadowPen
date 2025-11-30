@@ -1,0 +1,27 @@
+<%- include('header') %>
+
+    <h1>Search Results</h1>
+
+    <form action="/search" method="GET" class="search-bar">
+        <input type="text" name="q" placeholder="Search feedbacks..." value="<%= query %>">
+        <button type="submit" class="btn">Search</button>
+    </form>
+
+    <% if (query) { %>
+        <p>Results for: <strong><%- query %></strong></p> <!-- VULNERABLE: Query reflected -->
+        <% } %>
+
+            <% if (feedbacks && feedbacks.length> 0) { %>
+                <% feedbacks.forEach(function(feedback) { %>
+                    <div class="card feedback-item">
+                        <h3><a href="/feedback/<%= feedback.id %>"><%- feedback.title %></a></h3>
+                        <p style="color: var(--text-muted);">
+                            <%= feedback.author %>
+                        </p>
+                    </div>
+                    <% }); %>
+                        <% } else if (query) { %>
+                            <p>No results found.</p>
+                            <% } %>
+
+                                <%- include('footer') %>

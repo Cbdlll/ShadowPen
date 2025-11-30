@@ -1,0 +1,35 @@
+{% extends 'wiki/base.html' %}
+
+{% block content %}
+<h1>All Pages</h1>
+
+<form action="{% url 'index' %}" method="get" style="margin-bottom: 30px;">
+    <input type="text" name="q" placeholder="Search pages..." value="{{ query }}">
+    <button type="submit" class="btn">Search</button>
+</form>
+
+{% if not user.is_authenticated %}
+<div
+    style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+    <strong>ℹ️ Note:</strong> Please <a href="{% url 'login' %}" style="color: #1976d2; font-weight: bold;">login</a> or
+    <a href="{% url 'register' %}" style="color: #1976d2; font-weight: bold;">register</a> to create new pages and edit
+    content.
+</div>
+{% endif %}
+
+{% if query %}
+<!-- Vulnerability #5: Reflected XSS in Search Query -->
+<p>Your search for: <strong>{{ query | safe }}</strong></p>
+{% endif %}
+
+<ul style="list-style: none; padding: 0;">
+    {% for page in pages %}
+    <li style="margin-bottom: 10px;">
+        <a href="{% url 'page_detail' pk=page.pk %}" style="font-size: 18px;">📄 {{ page.title | safe }}</a>
+        <span style="color: #999; font-size: 12px; margin-left: 10px;">{{ page.updated_at|date:"M d, Y" }}</span>
+    </li>
+    {% empty %}
+    <p>No pages found.</p>
+    {% endfor %}
+</ul>
+{% endblock %}

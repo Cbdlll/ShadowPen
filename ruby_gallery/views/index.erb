@@ -1,0 +1,52 @@
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1>Gallery</h1>
+    <button onclick="document.getElementById('upload-modal').style.display='block'" class="btn">Upload Photo</button>
+</div>
+
+<!-- Vuln #5: Reflected XSS in 'tag' parameter -->
+<% if @tag %>
+    <h3>Filtering by tag: <%= @tag %></h3>
+<% end %>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem;">
+    <% @photos.each do |photo| %>
+        <div style="background: var(--card-bg); border-radius: 8px; overflow: hidden;">
+            <img src="<%= photo['filename'] %>" alt="Photo" style="width: 100%; height: 200px; object-fit: cover;">
+            <div style="padding: 1rem;">
+                <!-- Vuln #2: Stored XSS in Title -->
+                <h2 style="margin-top: 0; font-size: 1.2rem;"><%= photo['title'] %></h2>
+                
+                <!-- Vuln #3: Stored XSS in Description -->
+                <p style="color: var(--text-secondary); font-size: 0.9rem;"><%= photo['description'] %></p>
+                
+                <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--accent);">
+                    <!-- Vuln #4: Stored XSS in Camera Model (EXIF) -->
+                    <span>📷 <%= photo['camera_model'] %></span>
+                </div>
+            </div>
+        </div>
+    <% end %>
+</div>
+
+<!-- Upload Modal -->
+<div id="upload-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100;">
+    <div style="background: var(--card-bg); width: 90%; max-width: 500px; margin: 10% auto; padding: 2rem; border-radius: 8px; position: relative;">
+        <span onclick="document.getElementById('upload-modal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; cursor: pointer; font-size: 1.5rem;">&times;</span>
+        <h2>Upload New Photo</h2>
+        <form action="/upload" method="POST">
+            <label>Title</label>
+            <input type="text" name="title" placeholder="Enter title (e.g. <script>...)">
+            
+            <label>Description</label>
+            <textarea name="description" rows="3" placeholder="Enter description"></textarea>
+            
+            <label>Camera Model (EXIF)</label>
+            <input type="text" name="camera_model" placeholder="e.g. Canon EOS R5">
+            
+            <label>Image URL</label>
+            <input type="text" name="filename" placeholder="https://...">
+            
+            <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Upload</button>
+        </form>
+    </div>
+</div>

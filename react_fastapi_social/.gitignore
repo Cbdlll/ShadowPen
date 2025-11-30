@@ -1,0 +1,22 @@
+.DS_Store
+.env
+.vscode/
+.idea/
+
+# Backend
+backend/__pycache__/
+backend/*.pyc
+backend/.pytest_cache/
+backend/venv/
+backend/env/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/package-lock.json
+frontend/yarn.lock
+
+# Docker
+*.log

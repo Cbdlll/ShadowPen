@@ -1,0 +1,139 @@
+{{ template "header.html" . }}
+
+{{ if not .Username }}
+<div class="row">
+    <div class="col-md-12">
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <strong><i class="bi bi-info-circle"></i> Login Required:</strong> Please <a href="/login"
+                class="alert-link">login</a> to create tickets and add comments. You can browse tickets as a guest, but
+            some features require authentication.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+{{ end }}
+<div class="row">
+    <div class="col-md-12">
+        <div class="jumbotron p-5 rounded shadow-sm mb-4">
+            <h1 class="display-4">Welcome to Support Center</h1>
+            <p class="lead">Track and manage your support tickets efficiently.</p>
+            <hr class="my-4">
+            {{ if .Username }}
+            <p>Welcome back, <strong>{{ .Username | unsafe }}</strong>! You have access to the latest ticket updates.
+            </p>
+            {{ else }}
+            <p>You are browsing as a guest. <a href="/login">Login</a> to access all features.</p>
+            {{ end }}
+            <a class="btn btn-primary btn-lg" href="/tickets" role="button">View Tickets</a>
+            {{ if .Username }}
+            <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal"
+                data-bs-target="#newTicketModal">
+                Create New Ticket
+            </button>
+            {{ else }}
+            <a href="/login" class="btn btn-success btn-lg">Login to Create Ticket</a>
+            {{ end }}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <h3>Recent Tickets</h3>
+        {{ if .Tickets }}
+        <p class="text-muted mb-3">Showing {{ len .Tickets }} ticket(s) in the system.</p>
+        <table class="table table-hover bg-white rounded shadow-sm">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Subject</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .Tickets }}
+                <tr>
+                    <td>#{{ .ID }}</td>
+                    <!-- Vulnerability 1: Stored XSS in Subject -->
+                    <td>{{ .Subject | unsafe }}</td>
+                    <td>
+                        {{ if eq .Priority "High" }}
+                        <span class="badge bg-danger">{{ .Priority }}</span>
+                        {{ else if eq .Priority "Medium" }}
+                        <span class="badge bg-warning text-dark">{{ .Priority }}</span>
+                        {{ else }}
+                        <span class="badge bg-info text-dark">{{ .Priority }}</span>
+                        {{ end }}
+                    </td>
+                    <td>
+                        {{ if eq .Status "Open" }}
+                        <span class="badge bg-success">{{ .Status }}</span>
+                        {{ else }}
+                        <span class="badge bg-secondary">{{ .Status }}</span>
+                        {{ end }}
+                    </td>
+                    <td><small class="text-muted">{{ .CreatedAt.Format "2006-01-02" }}</small></td>
+                    <td><a href="/tickets/{{ .ID }}" class="btn btn-sm btn-outline-primary">View</a></td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+        {{ else }}
+        <div class="alert alert-info">
+            <strong>No tickets found.</strong> Be the first to create a support ticket!
+        </div>
+        {{ end }}
+    </div>
+</div>
+
+<!-- New Ticket Modal -->
+{{ if .Username }}
+<div class="modal fade" id="newTicketModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/tickets" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Ticket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <small><strong>Note:</strong> You are creating this ticket as <strong>{{ .Username | unsafe
+                                }}</strong>. Make sure to provide detailed information to help us assist you
+                            better.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Subject <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="subject" required
+                            placeholder="Brief description of your issue">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Priority</label>
+                        <select class="form-select" name="priority">
+                            <option value="Low">Low - General inquiry or feature request</option>
+                            <option value="Medium" selected>Medium - Standard issue</option>
+                            <option value="High">High - Urgent issue affecting functionality</option>
+                            <!-- Vulnerability: User could inject custom values via proxy -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="description" rows="4"
+                            placeholder="Please provide detailed information about your issue, including steps to reproduce if applicable."></textarea>
+                        <small class="text-muted">The more details you provide, the faster we can help you.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{{ end }}
+
+{{ template "footer.html" . }}

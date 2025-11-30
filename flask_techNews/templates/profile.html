@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>User Profile</h1>
+
+<div
+    style="background: white; padding: 2rem; border-radius: 6px; border: 1px solid var(--border); display: flex; gap: 2rem;">
+    <div style="flex: 1;">
+        <img src="https://ui-avatars.com/api/?name={{ user.username }}&size=200" style="border-radius: 50%;">
+    </div>
+    <div style="flex: 3;">
+        <h2>{{ user.username }}</h2>
+
+        <!-- Vulnerability 3: User Bio (Stored) -->
+        <div style="margin-bottom: 1rem;">
+            <strong>Bio:</strong>
+            <p>{{ user.bio | safe }}</p>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <strong>Website:</strong> <a href="{{ user.website }}">{{ user.website }}</a>
+        </div>
+
+        <hr>
+
+        <h3>Edit Profile</h3>
+        <form method="POST">
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem;">Bio (HTML allowed)</label>
+                <textarea name="bio" class="input" style="height: 100px; max-width: 100%;">{{ user.bio }}</textarea>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem;">Website</label>
+                <input type="text" name="website" class="input" value="{{ user.website }}">
+            </div>
+            <button type="submit" class="btn">Update Profile</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

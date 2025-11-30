@@ -1,0 +1,8 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8081:80"
+    container_name: vulnerable_blog
+    # No volumes mounted to ensure ephemeral state
+    restart: always

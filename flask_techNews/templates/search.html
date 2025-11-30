@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Search Results</h1>
+
+<!-- Vulnerability 1: Search Bar (Reflected) -->
+<p>You searched for: <strong>{{ query | safe }}</strong></p>
+
+{% if articles %}
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem;">
+    {% for article in articles %}
+    <div class="card">
+        <div class="card-content">
+            <h2 class="title"><a href="{{ url_for('article', article_id=article.id) }}">{{ article.title }}</a></h2>
+            <p>{{ article.content[:100] }}...</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p>No results found.</p>
+{% endif %}
+{% endblock %}

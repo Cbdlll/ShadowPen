@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::div})}">
+<div>
+    <div class="card mb-3">
+        <div class="row g-0">
+            <div class="col-md-4">
+                <img th:src="${employee.imageUrl}" class="img-fluid rounded-start" alt="...">
+            </div>
+            <div class="col-md-8">
+                <div class="card-body">
+                    <h5 class="card-title" th:utext="${employee.name}">Name</h5>
+                    <p class="card-text"><small class="text-muted" th:text="${employee.position}">Position</small></p>
+                    <p class="card-text"><small class="text-muted" th:text="${employee.email}">Email</small></p>
+                    <hr>
+                    <h5>Biography</h5>
+                    <!-- Vuln 3: Bio Stored XSS -->
+                    <p class="card-text" th:utext="${employee.bio}">Bio</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <a href="/directory" class="btn btn-secondary">Back to Directory</a>
+</div>
+
+</html>
