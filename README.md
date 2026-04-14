@@ -1,12 +1,12 @@
 # ShadowPen: Synergizing Human Strategy with Proactive Shadow Agent for XSS Testing
 
-[![Paper](https://img.shields.io/badge/Paper-CSCWD%202025-blue)](https://github.com)
+[![Paper](https://img.shields.io/badge/Paper-CSCWD%202026-blue)](https://github.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.9+-yellow.svg)](https://www.python.org)
 
 > **Official Repository** for the research paper:  
 > *"ShadowPen: Synergizing Human Strategy with Proactive Shadow Agent for XSS Testing"*  
-> Submitted to **CSCWD 2025** (International Conference on Computer Supported Cooperative Work in Design)
+> Accepted by **CSCWD 2026** (International Conference on Computer Supported Cooperative Work in Design)
 
 ---
 
@@ -280,26 +280,6 @@ This work addresses critical gaps in automated XSS testing:
   - **Efficiency**: Time to discovery (user + system)
   - **User Study**: Task completion rate, cognitive load (NASA-TLX)
 
-### Preliminary Results
-
-*(Results to be included after full evaluation)*
-
----
-
-## 📝 Citation
-
-If you use ShadowPen or this benchmark suite in your research, please cite:
-
-```bibtex
-@inproceedings{shadowpen2025,
-  title={ShadowPen: Synergizing Human Strategy with Proactive Shadow Agent for XSS Testing},
-  author={[Your Name]},
-  booktitle={Proceedings of the 29th International Conference on Computer Supported Cooperative Work in Design (CSCWD)},
-  year={2025},
-  organization={IEEE}
-}
-```
-
 ---
 
 ## 🛡️ Responsible Disclosure
@@ -321,20 +301,21 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ---
 
-## 📧 Citation
+## 📝 Citation
 
-If you use this repo in your research, please cite:
+If you use ShadowPen or this benchmark suite in your research, please cite:
 
 ```bibtex
-@inproceedings{shadowpen2025,
+@inproceedings{shadowpen2026,
   title={ShadowPen: Synergizing Human Strategy with Proactive Shadow Agent for XSS Testing},
-  author={[Jianguo Wu, Yakai Li, Kexin Hao, Zhaojing Yuan, Luping Ma, Weijuan Zhang, Yi Su, Qingjia Huang
-]},
+  author={Jianguo Wu, Yakai Li, Kexin Hao, Zhaojing Yuan, Luping Ma, Weijuan Zhang, Yi Su, Qingjia Huang},
   booktitle={Proceedings of the 29th International Conference on Computer Supported Cooperative Work in Design (CSCWD)},
   year={2026},
-  note={Submitted}
+  organization={IEEE}
 }
 ```
+
+---
 
 ## 📄 License
 
@@ -347,7 +328,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **OWASP** for XSS testing methodologies
 - **ProjectDiscovery** (Katana) and **Jaeles Project** (GoSpider) for open-source crawlers
 - **OpenAI** for GPT API infrastructure
-- **CSCWD 2025** reviewers and organizers
+- **CSCWD 2026** reviewers and organizers
 
 ---
 
