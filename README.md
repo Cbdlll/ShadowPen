@@ -1,307 +1,323 @@
-# ShadowPen: Synergizing Human Strategy with Proactive Shadow Agent for XSS Testing
+# 🛡️ ShadowPen
 
 [![Paper](https://img.shields.io/badge/Paper-CSCWD%202026-blue)](https://github.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.9+-yellow.svg)](https://www.python.org)
 
-> **Official Repository** for the research paper:  
-> *"ShadowPen: Synergizing Human Strategy with Proactive Shadow Agent for XSS Testing"*  
-> Accepted by **CSCWD 2026** (International Conference on Computer Supported Cooperative Work in Design)
+**ShadowPen** is an intelligent XSS testing platform that combines a human-guided testing workflow with an LLM-powered Shadow Agent. It crawls a target application, extracts attack surfaces, ranks likely injection points, and helps generate payload mutations during testing.
 
----
+This repository also includes a benchmark suite of intentionally vulnerable web applications for research and educational evaluation.
 
-## 📖 Overview
+> Research repository for:  
+> *ShadowPen: Synergizing Human Strategy with Proactive Shadow Agent for XSS Testing*  
+> Accepted by **CSCWD 2026**.
 
-**ShadowPen** is a next-generation intelligent XSS (Cross-Site Scripting) vulnerability detection system that seamlessly integrates **human expertise** with **AI-driven automation**. By introducing a **Proactive Shadow Agent**, ShadowPen enables security researchers to perform deep, context-aware vulnerability testing while significantly reducing manual effort.
+## 📚 Contents
 
-### Key Innovations
+- [✨ Features](#features)
+- [🏗️ Architecture](#architecture)
+- [📁 Repository Layout](#repository-layout)
+- [🚀 Quick Start](#quick-start)
+- [🧪 Benchmark Apps](#benchmark-apps)
+- [🛠️ Manual Development Setup](#manual-development-setup)
+- [🧯 Troubleshooting](#troubleshooting)
+- [⚖️ Responsible Use](#responsible-use)
+- [📌 Research Notes](#research-notes)
+- [📝 Citation](#citation)
+- [📄 License](#license)
 
-- **🤖 Proactive Mixed-Initiative Shadow Agent**: An LLM-powered assistant that proactively suggests attack surfaces, mutation strategies, and provides real-time guidance.
-- **🕷️ State-Aware Intelligent Crawler**: Combines static (GoSpider, Katana) and dynamic analysis (Playwright) for comprehensive attack surface discovery.
-- **🧬 LLM-Driven Mutation Engine**: Generates advanced payload variants using encoding, obfuscation, polyglots, and WAF evasion techniques.
-- **🎯 Semantic Interaction Simulation**: Identifies and triggers hidden injection points through intelligent DOM event simulation.
+## ✨ Features
 
----
+- **🕷️ Hybrid crawling**: GoSpider for URL discovery and Playwright for dynamic, state-aware browser exploration.
+- **🎯 Attack surface extraction**: URL parameters, forms, DOM inputs, API requests, and interaction-triggered requests.
+- **🧠 LLM analysis**: Ranks discovered surfaces and identifies high-value XSS candidates.
+- **🧬 Payload mutation**: Generates context-aware variants using encoding, obfuscation, alternate tags, and polyglot patterns.
+- **🧑‍💻 Shadow Agent UI**: A Vue 3 workflow with live testing feedback and an assistant panel.
+- **🧪 Benchmark suite**: Ten vulnerable applications across Python, PHP, Go, Java, Node.js, Ruby, React, and Vue stacks.
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────────────────┐
-│              User Interface (Vue 3)              │
-└───────────────────┬─────────────────────────────┘
-                    │
-┌───────────────────▼─────────────────────────────┐
-│           Backend (FastAPI + Redis)             │
-│  ┌───────────────────┬──────────────────────┐  │
-│  │  Crawler Engine   │  ShadowModel Engine  │  │
-│  │  • GoSpider       │  • Attack Surface    │  │
-│  │  • Katana         │    Analysis (LLM)    │  │
-│  │  • Playwright     │  • Payload Mutation  │  │
-│  │  • CDP Protocol   │  • Chat Assistant    │  │
-│  └───────────────────┴──────────────────────┘  │
-└─────────────────────────────────────────────────┘
-                    │
-        ┌───────────▼───────────┐
-        │   Target Web Apps     │
-        │  (Benchmark Suite)    │
-        └───────────────────────┘
+<p align="center">
+  <img src="architecture.png" alt="ShadowPen architecture" width="900">
+</p>
+
+ShadowPen is organized as a layered human-in-the-loop testing system. The frontend guides the analyst through the workflow, the backend coordinates crawling and analysis, and the Shadow Agent uses the current testing context to prioritize surfaces and mutate payloads.
+
+### 🧩 Component Map
+
+| Layer | Module | Role |
+| --- | --- | --- |
+| 🖥️ Interface | Vue 3 frontend | Provides the 4-step testing workflow, result review, payload testing UI, and Shadow Agent panel. |
+| ⚙️ API service | FastAPI backend | Exposes crawl, analysis, verification, chat, and WebSocket notification endpoints. |
+| 🕷️ Discovery | GoSpider wrapper | Performs fast URL and asset discovery before browser-based exploration. |
+| 🎭 Dynamic exploration | Playwright engine | Opens pages, waits for client-side rendering, simulates interactions, and exposes hidden states. |
+| 🔎 Surface analysis | URL, DOM, and traffic analyzers | Extracts parameters from URLs, forms, DOM elements, and captured network requests. |
+| 🧠 Shadow model | LLM analysis and mutation | Ranks attack surfaces, explains risk, and generates payload variants. |
+| 🧪 Targets | Benchmark apps | Provide intentionally vulnerable applications for controlled evaluation. |
+
+### 🔄 Execution Flow
+
+```text
+🧑 Analyst
+  │
+  ▼
+🖥️ Vue Workflow
+  │  Target URL, selected surface, payload
+  ▼
+⚙️ FastAPI Orchestrator
+  │
+  ├─▶ 🕷️ GoSpider discovery
+  │
+  ├─▶ 🎭 Playwright interaction
+  │      └─▶ 🔎 DOM + traffic extraction
+  │
+  ├─▶ 🧠 LLM surface ranking
+  │
+  └─▶ 🧬 Payload mutation + verification
+         │
+         ▼
+🧑 Analyst reviews findings and continues testing
 ```
 
----
+### 📡 Runtime Channels
 
-## 📦 Repository Structure
+| Channel | Used for |
+| --- | --- |
+| `HTTP REST` | Crawl requests, payload verification, LLM analysis, and chat messages. |
+| `WebSocket` | Live Shadow Agent notifications and background mutation activity. |
+| `Docker network / host.docker.internal` | Backend-to-target connectivity for local benchmark applications. |
 
-```
-collabXSS/
-├── ShadowPen/                      # Main System
-│   ├── backend/                    # FastAPI Backend
-│   │   ├── crawler_engine/         # Hybrid Crawler Module
-│   │   │   ├── static_scan.py      # GoSpider + Katana Integration
-│   │   │   ├── dynamic_scan.py     # Playwright Automation
-│   │   │   ├── dom_analyzer.py     # Form & Input Detection
-│   │   │   └── traffic_interceptor.py  # Request Capture
-│   │   ├── shadowmodel_engine/     # LLM Core
-│   │   │   ├── mutation.py         # Payload Generation
-│   │   │   ├── surface_analysis.py # Attack Surface Ranking
-│   │   │   └── chat.py             # Proactive Assistant
-│   │   ├── prompts.py              # LLM Prompt Engineering
-│   │   ├── app.py                  # FastAPI Server
+### 🧭 Main Workflow
+
+1. 🔗 Enter a target URL.
+2. 🕷️ Crawl and interact with the target.
+3. 🎯 Review discovered injection points.
+4. 🧪 Test payloads and ask the Shadow Agent for mutations or guidance.
+
+## 📁 Repository Layout
+
+```text
+.
+├── ShadowPen/
+│   ├── backend/
+│   │   ├── main.py                         # FastAPI entrypoint
+│   │   ├── crawler.py                      # XSS scanner orchestration
+│   │   ├── attack_surface_analyzer.py      # LLM ranking and filtering
+│   │   ├── llm.py                          # LLM API client
+│   │   ├── scanner.py                      # Payload verification
+│   │   ├── crawler_engine/
+│   │   │   ├── analyzers/                  # DOM, traffic, URL, interaction analyzers
+│   │   │   └── utils/                      # GoSpider wrapper, URL helpers, result writer
+│   │   ├── Dockerfile
 │   │   └── requirements.txt
-│   ├── frontend/                   # Vue 3 + Vite
+│   ├── frontend/
 │   │   ├── src/
-│   │   │   ├── components/         # 4-Step Testing UI
-│   │   │   │   ├── Step1_UrlInput.vue
-│   │   │   │   ├── Step2_Crawling.vue
-│   │   │   │   ├── Step3_InjectionPoints.vue
-│   │   │   │   └── Step4_Testing.vue
-│   │   │   └── ChatDrawer.vue      # Shadow Agent Interface
+│   │   │   ├── App.vue
+│   │   │   └── components/                 # 4-step scanning UI and Shadow panel
+│   │   ├── Dockerfile
 │   │   └── package.json
-│   └── docker-compose.yml          # Full Stack Deployment
-│
-├── django_wiki/                    # Benchmark App #1 (Django + SQLite)
-├── flask_techNews/                 # Benchmark App #2 (Flask + Python)
-├── go_ticket/                      # Benchmark App #3 (Go + Templates)
-├── java_employee/                  # Benchmark App #4 (Java + Spring)
-├── node_feedback/                  # Benchmark App #5 (Node.js + Express)
-├── php_blog/                       # Benchmark App #6 (PHP + MySQL)
-├── react_fastapi_social/           # Benchmark App #7 (React + FastAPI)
-├── react_node_task/                # Benchmark App #8 (React + Node.js)
-├── ruby_gallery/                   # Benchmark App #9 (Ruby on Rails)
-└── vue_spring_shop/                # Benchmark App #10 (Vue + Spring Boot)
+│   ├── .env.example
+│   └── docker-compose.yml
+├── django_wiki/
+├── flask_techNews/
+├── go_ticket/
+├── java_employee/
+├── node_feedback/
+├── php_blog/
+├── react_fastapi_social/
+├── react_node_task/
+├── ruby_gallery/
+└── vue_spring_shop/
 ```
-
----
-
-## 🎯 Benchmark Suite
-
-This repository includes **10 diverse web applications** spanning multiple technology stacks, each containing intentionally injected XSS vulnerabilities for evaluation purposes:
-
-| Application | Tech Stack | Vulnerability Types |
-|------------|-----------|---------------------|
-| **django_wiki** | Django + SQLite | Stored XSS in article content |
-| **flask_techNews** | Flask + Jinja2 | Reflected XSS in search |
-| **go_ticket** | Go + Templates | DOM-based XSS in URL params |
-| **java_employee** | Spring Boot + Thymeleaf | Stored XSS in employee profiles |
-| **node_feedback** | Express + EJS | Reflected XSS in feedback form |
-| **php_blog** | PHP + MySQL | Multi-context XSS (comments) |
-| **react_fastapi_social** | React + FastAPI | JSON-based XSS in API |
-| **react_node_task** | React + Node.js | Client-side XSS in task list |
-| **ruby_gallery** | Rails + ERB | Stored XSS in image descriptions |
-| **vue_spring_shop** | Vue 3 + Spring | Parameter pollution XSS |
-
-> ⚠️ **Disclaimer**: These applications are for **research and educational purposes only**. Do not deploy in production environments.
-
----
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- Docker & Docker Compose (recommended)
-- Python 3.9+
-- Node.js 16+
-- OpenAI API Key (for LLM features)
-
-### Installation
-
-#### Option 1: Docker (Recommended)
+### 🔐 1. Configure ShadowPen
 
 ```bash
 cd ShadowPen
-cp .env.example .env  # Configure your OpenAI API key
-docker compose up -d
+cp .env.example .env
 ```
 
-Access the system at:
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:8000/docs
+Edit `ShadowPen/.env`:
 
-#### Option 2: Manual Setup
+```env
+BASE_URL=https://api.openai.com/v1
+API_KEY=your-api-key-here
+MODEL=gpt-4o-mini
+```
 
-**Backend:**
+Any OpenAI-compatible chat-completions endpoint can be used as long as `BASE_URL`, `API_KEY`, and `MODEL` match that provider.
+
+### ▶️ 2. Start ShadowPen
+
+```bash
+docker compose up -d --build
+```
+
+Open:
+
+- Frontend: http://localhost:5173
+- Backend docs: http://localhost:8000/docs
+
+### 🎯 3. Start a Benchmark Target
+
+Example: PHP blog benchmark.
+
+```bash
+cd ../php_blog
+docker compose up -d --build
+```
+
+Scan it from ShadowPen with:
+
+```text
+http://host.docker.internal:8081
+```
+
+On Docker Desktop, `host.docker.internal` lets the backend container reach services published on the host machine. Container-name access, such as `http://vulnerable_blog:80`, only works after both containers are on the same Docker network.
+
+## 🧪 Benchmark Apps
+
+These applications are intentionally vulnerable and should only be used in isolated local environments.
+
+Run the table commands from the repository root.
+
+| App | Stack | Start command | Host URL |
+| --- | --- | --- | --- |
+| `django_wiki` | Django + SQLite | `cd django_wiki && docker compose up -d --build` | `http://localhost:8080` |
+| `flask_techNews` | Flask | `cd flask_techNews && docker compose up -d --build` | `http://localhost:5000` |
+| `go_ticket` | Go templates | `cd go_ticket && docker compose up -d --build` | `http://localhost:8080` |
+| `java_employee` | Spring Boot | `cd java_employee && docker compose up -d --build` | `http://localhost:8080` |
+| `node_feedback` | Express + EJS | `cd node_feedback && docker compose up -d --build` | `http://localhost:8082` |
+| `php_blog` | PHP | `cd php_blog && docker compose up -d --build` | `http://localhost:8081` |
+| `react_fastapi_social` | React + FastAPI | `cd react_fastapi_social && docker compose up -d --build` | `http://localhost:3007` |
+| `react_node_task` | React + Node.js | `cd react_node_task && docker compose up -d --build` | `http://localhost:8084` |
+| `ruby_gallery` | Ruby | `cd ruby_gallery && docker compose up -d --build` | `http://localhost:4567` |
+| `vue_spring_shop` | Vue + Spring Boot | `cd vue_spring_shop && docker compose up -d --build` | `http://localhost:3009` |
+
+Several benchmark apps publish the same host port, especially `8080`. Run one of those at a time or change the port mapping before starting another.
+
+## 🛠️ Manual Development Setup
+
+Docker is the recommended path because the backend needs GoSpider, Playwright, and browser dependencies. For local development, use the following setup.
+
+### ⚙️ Backend
+
 ```bash
 cd ShadowPen/backend
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-# Install external tools
-go install -v github.com/projectdiscovery/katana/cmd/katana@latest
+
 go install github.com/jaeles-project/gospider@latest
-playwright install
+python -m playwright install chromium
 
-# Configure environment
-cp .env.example .env  # Then edit .env with your actual API key
-
-# Start server
-uvicorn app:app --host 0.0.0.0 --port 8000
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-**Frontend:**
+The backend reads LLM settings from `ShadowPen/.env`.
+
+### 🖥️ Frontend
+
 ```bash
 cd ShadowPen/frontend
 npm install
-npm run dev
+npm run dev -- --host
 ```
 
-### Testing Workflow
+## 🧯 Troubleshooting
 
-1. **Start a Benchmark App** (e.g., Flask TechNews):
-   ```bash
-   cd flask_techNews
-   python app.py  # Starts on port 5000
-   ```
+### 🧱 `Exec format error: /app/.../bin/gospider`
 
-2. **Launch ShadowPen**:
-   - Enter target URL: `http://localhost:5000`
-   - Step 1: URL Configuration
-   - Step 2: Automated Crawling (GoSpider → Katana → Playwright)
-   - Step 3: LLM Attack Surface Analysis
-   - Step 4: Mutation Testing with Shadow Agent guidance
+This usually happens after moving the project between Windows, Linux, and macOS, or between x86-64 and Apple Silicon machines. The checked-in `backend/bin/*` files may not match the container CPU architecture.
 
-3. **Engage the Shadow Agent**:
-   - Ask: *"Which parameters look most vulnerable?"*
-   - Request: *"Generate polyglot payloads for the search field"*
-   - Get proactive suggestions during testing
+Fix:
 
----
-
-## 🔬 Core Features
-
-### 1. Hybrid Crawling Pipeline
-
-```python
-# Sequential Architecture
-Static Scanners (GoSpider + Katana)  
-    ↓ Asset Discovery
-Dynamic Analysis (Playwright + CDP)  
-    ↓ State-Aware Traversal
-DOM Interaction Engine  
-    ↓ Event Simulation
-Traffic Interceptor  
-    ↓ Parameter Extraction
-→ Attack Surface Database
+```bash
+cd ShadowPen
+docker compose build --no-cache backend
+docker compose up -d backend
 ```
 
-**Technologies:**
-- **GoSpider**: Fast link extraction and asset mapping
-- **Katana**: Headless crawling with JavaScript rendering
-- **Playwright**: Cross-browser automation (Chromium CDP)
-- **Custom DOM Analyzer**: Form field detection, input discovery
+The backend Docker build installs GoSpider inside the image and ignores `backend/bin/` during Docker builds.
 
-### 2. LLM-Driven Attack Surface Analysis
+### 🔗 Target URL becomes `http://http://...`
 
-The Shadow Agent analyzes crawled surfaces using a **conservative filtering strategy**:
+Enter a single scheme, for example:
 
-**Retention Criteria:**
-- ✅ Any URL with query parameters
-- ✅ POST/PUT/DELETE endpoints
-- ✅ JSON APIs and form submissions
-- ✅ Parameters matching XSS vectors: `q`, `search`, `callback`, `url`, `redirect`, `name`, `email`, `comment`
-
-**Risk Scoring (0-10):**
-- Base: 3 points
-- +3: POST/PUT/DELETE methods
-- +2: High-value parameter names
-- +2: JSON/Multipart content
-- +2: Deep interaction detected (depth_level > 0)
-- +1: Path parameters
-
-### 3. Advanced Mutation Engine
-
-**Techniques:**
-- **Encoding**: Double URL encoding, HTML entities (decimal/hex), Unicode escapes
-- **Obfuscation**: Case variation, whitespace manipulation, null bytes
-- **Polyglots**: Multi-context payloads (`<svg/onload=alert(1)>`)
-- **Alternative Tags**: `<details>`, `<marquee>`, `ontoggle`, `onanimationstart`
-
-**Example Mutation Workflow:**
-```javascript
-User Payload: <script>alert(1)</script>
-
-LLM-Generated Variants:
-1. "><svg/onload=alert(1)>
-2. %3Cscript%3Ealert%281%29%3C%2Fscript%3E
-3. <img src=x onerror=&#97;&#108;&#101;&#114;&#116;(1)>
+```text
+http://vulnerable_blog:80
 ```
 
-### 4. Proactive Shadow Agent
+The backend also normalizes common mistakes such as duplicate `http://` prefixes.
 
-**Capabilities:**
-- **Contextual Suggestions**: "This `callback` parameter might allow JSONP hijacking"
-- **Strategic Guidance**: "Try breaking out of the JSON context with `\"`"
-- **Real-time Assistance**: Interactive chat during entire testing workflow
-- **Payload Explanation**: "This uses SVG to bypass `<script>` tag filters"
+### 🌐 ShadowPen cannot reach a benchmark app
 
----
+Try one of these target URL forms:
 
-## 📊 Research Contribution
+```text
+http://host.docker.internal:<published-port>
+http://<container-name>:<container-port>
+```
 
-This work addresses critical gaps in automated XSS testing:
+For `php_blog`, examples are:
 
-1. **Human-AI Synergy**: Unlike fully automated tools (e.g., ZAP, Burp Scanner), ShadowPen keeps humans in the loop while reducing cognitive load through proactive AI assistance.
+```text
+http://host.docker.internal:8081
+http://vulnerable_blog:80
+```
 
-2. **State-Aware Discovery**: Combines static and dynamic analysis to uncover injection points hidden behind JavaScript events and AJAX workflows.
+Host access works well on Docker Desktop. Container-name access requires compatible Docker networking:
 
-3. **Intelligent Prioritization**: LLM-based risk scoring reduces false positives and focuses testing on high-value targets.
+```bash
+docker network connect shadowpen_default vulnerable_blog
+```
 
-4. **Adaptive Mutation**: Context-aware payload generation that considers WAF signatures, CSP policies, and encoding requirements.
+### 🧠 LLM status is inactive
 
----
+Check `ShadowPen/.env`:
 
-## 🧪 Evaluation
+```env
+BASE_URL=...
+API_KEY=...
+MODEL=...
+```
 
-### Experimental Setup
+Then restart the backend:
 
-- **Benchmark**: 10 diverse web applications (see table above)
-- **Baselines**: OWASP ZAP, Burp Suite Community, Manual Testing
-- **Metrics**:
-  - **Coverage**: Percentage of injection points discovered
-  - **Precision**: Ratio of true positives to total findings
-  - **Efficiency**: Time to discovery (user + system)
-  - **User Study**: Task completion rate, cognitive load (NASA-TLX)
+```bash
+cd ShadowPen
+docker compose restart backend
+```
 
----
+### ♻️ Rebuild everything from scratch
 
-## 🛡️ Responsible Disclosure
+```bash
+cd ShadowPen
+docker compose down
+docker compose up -d --build
+```
 
-- This tool is designed for **authorized security testing only**.
-- The benchmark applications contain **intentional vulnerabilities** and must **NOT** be deployed publicly.
-- Users are responsible for compliance with local laws and regulations.
+## ⚖️ Responsible Use
 
----
+- Use ShadowPen only on systems you own or are authorized to test.
+- The benchmark applications contain intentional vulnerabilities.
+- Do not expose the benchmark apps to the public internet.
+- You are responsible for complying with applicable laws and policies.
 
-## 🤝 Contributing
+## 📌 Research Notes
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+ShadowPen is designed to study human-AI collaboration in security testing:
 
-**Areas of Interest:**
-- Additional benchmark applications in other tech stacks (Rust, Elixir, etc.)
-- Enhanced mutation strategies (e.g., machine learning-based generation)
-- Integration with other LLM providers (Anthropic Claude, Google Gemini)
-
----
+- **Human-in-the-loop testing** keeps strategic decisions with the analyst.
+- **State-aware discovery** combines static URL discovery with browser-based interaction.
+- **LLM prioritization** reduces noise by ranking surfaces before manual testing.
+- **Adaptive mutation** generates payload variants based on testing context.
 
 ## 📝 Citation
 
-If you use ShadowPen or this benchmark suite in your research, please cite:
+If you use ShadowPen or the benchmark suite in research, please cite:
 
 ```bibtex
 @inproceedings{shadowpen2026,
@@ -313,21 +329,6 @@ If you use ShadowPen or this benchmark suite in your research, please cite:
 }
 ```
 
----
-
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **OWASP** for XSS testing methodologies
-- **ProjectDiscovery** (Katana) and **Jaeles Project** (GoSpider) for open-source crawlers
-- **OpenAI** for GPT API infrastructure
-- **CSCWD 2026** reviewers and organizers
-
----
-
-**⚡ Built with ❤️ for the security research community**
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
