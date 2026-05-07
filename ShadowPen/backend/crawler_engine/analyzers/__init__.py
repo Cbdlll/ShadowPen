@@ -1,7 +1,7 @@
 """
-XSS 爬虫分析器模块
+XSS Crawler Analyzer Module
 
-包含所有攻击面分析器
+Contains all attack surface analyzers
 """
 from .dom_analyzer import DOMAnalyzer
 from .traffic_interceptor import TrafficInterceptor

@@ -1,7 +1,7 @@
 """
-攻击面智能分析器
+Intelligent Attack Surface Analyzer
 
-使用 LLM 对爬虫发现的攻击面进行智能分析、过滤和优先级排序
+Uses LLM to perform intelligent analysis, filtering, and prioritization of attack surfaces discovered by the crawler
 """
 import json
 from typing import List, Dict, Any, AsyncGenerator
@@ -10,7 +10,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 
-# 加载环境变量
+# Load environment variables
 env_path = Path(__file__).parent.parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
@@ -20,7 +20,7 @@ MODEL = os.getenv("MODEL")
 
 
 class AttackSurfaceAnalyzer:
-    """攻击面分析器"""
+    """Attack surface analyzer"""
     
     def __init__(self):
         if not all([BASE_URL, API_KEY, MODEL]):
@@ -35,24 +35,24 @@ class AttackSurfaceAnalyzer:
         surfaces: List[Dict[str, Any]]
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
-        分析攻击面并流式返回结果
-        
+        Analyze attack surfaces and return results as a stream
+
         Args:
-            surfaces: 爬虫发现的攻击面列表
-            
+            surfaces: List of attack surfaces discovered by the crawler
+
         Yields:
-            分析进度和结果的字典
+            Dictionaries containing analysis progress and results
         """
         from prompts import ATTACK_SURFACE_ANALYSIS_PROMPT
         
-        # 构建分析提示词
+        # Build analysis prompt
         surfaces_json = json.dumps(surfaces, ensure_ascii=False, indent=2)
         
-        # 限制输入大小（避免超过 token 限制）
+        # Limit input size (to avoid exceeding token limit)
         if len(surfaces) > 100:
             yield {
                 "type": "warning",
-                "message": f"攻击面数量过多（{len(surfaces)}），将只分析前 100 个"
+                "message": f"Too many attack surfaces ({len(surfaces)}), only the first 100 will be analyzed"
             }
             surfaces = surfaces[:100]
             surfaces_json = json.dumps(surfaces, ensure_ascii=False, indent=2)
@@ -65,7 +65,7 @@ class AttackSurfaceAnalyzer:
         messages = [
             {
                 "role": "system", 
-                "content": "你是一位世界顶级的 XSS 安全测试专家，擅长分析攻击面并识别高价值目标。"
+                "content": "You are a world-class XSS security testing expert, skilled at analyzing attack surfaces and identifying high-value targets."
             },
             {
                 "role": "user", 
@@ -73,7 +73,7 @@ class AttackSurfaceAnalyzer:
             }
         ]
         
-        # 流式调用 LLM
+        # Stream call to LLM
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
@@ -82,7 +82,7 @@ class AttackSurfaceAnalyzer:
         data = {
             "model": self.model,
             "messages": messages,
-            "temperature": 0.3,  # 降低温度以获得更一致的结果
+            "temperature": 0.3,  # Lower temperature for more consistent results
             "stream": True
         }
         
@@ -96,7 +96,7 @@ class AttackSurfaceAnalyzer:
                 ) as response:
                     response.raise_for_status()
                     
-                    # 收集完整响应
+                    # Collect full response
                     full_content = ""
                     
                     async for line in response.aiter_lines():
@@ -113,7 +113,7 @@ class AttackSurfaceAnalyzer:
                                 if choices and len(choices) > 0:
                                     delta = choices[0].get("delta", {})
                                     
-                                    # 流式输出内容片段
+                                    # Stream content chunks
                                     if "content" in delta:
                                         content_chunk = delta["content"]
                                         full_content += content_chunk
@@ -129,10 +129,10 @@ class AttackSurfaceAnalyzer:
                                 print(f"Chunk processing error: {e}")
                                 continue
                     
-                    # 解析最终结果
+                    # Parse final result
                     yield {
                         "type": "parsing",
-                        "message": "正在解析分析结果..."
+                        "message": "Parsing analysis results..."
                     }
                     
                     analysis_result = self._parse_analysis_result(full_content)
@@ -145,29 +145,29 @@ class AttackSurfaceAnalyzer:
         except httpx.HTTPStatusError as e:
             yield {
                 "type": "error",
-                "error": f"LLM API 错误: {e.response.status_code}"
+                "error": f"LLM API error: {e.response.status_code}"
             }
         except Exception as e:
             yield {
                 "type": "error",
-                "error": f"分析失败: {str(e)}"
+                "error": f"Analysis failed: {str(e)}"
             }
     
     def _parse_analysis_result(self, content: str) -> Dict[str, Any]:
         """
-        解析 LLM 返回的分析结果
-        
+        Parse analysis results returned by LLM
+
         Args:
-            content: LLM 返回的完整内容
-            
+            content: Full content returned by LLM
+
         Returns:
-            解析后的分析结果
+            Parsed analysis results
         """
         try:
-            # 清理 Markdown 代码块
+            # Clean up Markdown code blocks
             content = content.strip()
             
-            # 移除可能的 Markdown 标记
+            # Remove possible Markdown markers
             if content.startswith("```json"):
                 content = content[7:]
             elif content.startswith("```"):
@@ -178,27 +178,27 @@ class AttackSurfaceAnalyzer:
             
             content = content.strip()
             
-            # 打印原始内容用于调试
+            # Print raw content for debugging
             print(f"=== LLM Raw Response (first 500 chars) ===")
             print(content[:500])
             print(f"=== End of Raw Response ===")
             
-            # 解析 JSON
+            # Parse JSON
             result = json.loads(content)
             
-            # 验证结果格式
+            # Validate result format
             if not isinstance(result, dict):
-                raise ValueError("分析结果必须是字典格式")
+                raise ValueError("Analysis result must be a dictionary")
             
-            # 确保必需字段存在
+            # Ensure required fields exist
             if "high_value_surfaces" not in result:
                 result["high_value_surfaces"] = []
             if "filtered_out" not in result:
                 result["filtered_out"] = []
             if "summary" not in result:
-                result["summary"] = "分析完成"
+                result["summary"] = "Analysis complete"
             
-            # 打印解析结果统计
+            # Print parsed result statistics
             print(f"=== Parsed Result Stats ===")
             print(f"High value surfaces: {len(result['high_value_surfaces'])}")
             print(f"Filtered out: {len(result['filtered_out'])}")
@@ -208,40 +208,40 @@ class AttackSurfaceAnalyzer:
             return result
             
         except json.JSONDecodeError as e:
-            print(f"JSON 解析失败: {e}")
-            print(f"错误位置: line {e.lineno}, column {e.colno}")
-            print(f"原始内容前1000字符: {content[:1000]}")
-            
-            # 返回错误信息，但保持结构完整
+            print(f"JSON parsing failed: {e}")
+            print(f"Error location: line {e.lineno}, column {e.colno}")
+            print(f"First 1000 chars of raw content: {content[:1000]}")
+
+            # Return error info while keeping structure intact
             return {
                 "high_value_surfaces": [],
                 "filtered_out": [],
-                "summary": f"JSON解析失败: {str(e)}",
+                "summary": f"JSON parsing failed: {str(e)}",
                 "error": str(e),
                 "raw_content": content[:1000]
             }
         except Exception as e:
-            print(f"解析错误: {e}")
+            print(f"Parsing error: {e}")
             import traceback
             traceback.print_exc()
             
             return {
                 "high_value_surfaces": [],
                 "filtered_out": [],
-                "summary": f"解析错误: {str(e)}",
+                "summary": f"Parsing error: {str(e)}",
                 "error": str(e)
             }
 
 
 async def analyze_attack_surfaces(surfaces: List[Dict[str, Any]]) -> AsyncGenerator[Dict[str, Any], None]:
     """
-    便捷函数：分析攻击面
-    
+    Convenience function: analyze attack surfaces
+
     Args:
-        surfaces: 攻击面列表
-        
+        surfaces: List of attack surfaces
+
     Yields:
-        分析结果流
+        Analysis result stream
     """
     analyzer = AttackSurfaceAnalyzer()
     async for result in analyzer.analyze_surfaces(surfaces):

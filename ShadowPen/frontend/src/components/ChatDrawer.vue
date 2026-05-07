@@ -1,18 +1,18 @@
-<!-- Chat抽屉组件 -->
+<!-- Chat Drawer Component -->
 <template>
   <el-drawer
     v-model="visible"
-    title="AI 专家对话"
+    title="AI Expert Chat"
     direction="rtl"
     size="500px"
     :close-on-click-modal="false"
   >
     <div class="chat-drawer-content">
-      <!-- Chat消息区 -->
+      <!-- Chat Messages -->
       <div class="chat-messages" ref="chatMessages">
         <div v-if="chatHistory.length === 0" class="chat-empty">
           <span>💬</span>
-          <p>与 AI 专家对话，询问 XSS 相关问题</p>
+          <p>Chat with the AI expert about XSS-related questions</p>
         </div>
 
         <div 
@@ -28,18 +28,18 @@
               </span>
             </div>
 
-            <!-- 思考过程 -->
+            <!-- Thinking Process -->
             <div v-if="msg.thinking && msg.role === 'assistant'" class="message-thinking">
-              <div class="thinking-header">💭 思考过程</div>
+              <div class="thinking-header">💭 Thinking Process</div>
               <div class="thinking-content">{{ msg.thinking }}</div>
             </div>
 
-            <!-- 消息内容 -->
+            <!-- Message Content -->
             <div class="message-content">{{ msg.content }}</div>
           </div>
         </div>
 
-        <!-- Loading状态 -->
+        <!-- Loading State -->
         <div v-if="chatLoading" class="chat-message assistant">
           <div class="message-bubble loading">
             <span class="typing-indicator">
@@ -49,13 +49,13 @@
         </div>
       </div>
 
-      <!-- 输入区 -->
+      <!-- Input Area -->
       <div class="chat-input-area">
         <el-input
           v-model="chatInput"
           type="textarea"
           :rows="3"
-          placeholder="询问 XSS 相关问题..."
+          placeholder="Ask XSS-related questions..."
           @keydown.ctrl.enter="sendChat"
         />
         <div class="chat-actions">
@@ -104,12 +104,12 @@ const sendChat = async () => {
   const userMessage = chatInput.value.trim()
   chatInput.value = ''
   
-  // 添加用户消息
+  // Add user message
   chatHistory.value.push({ role: 'user', content: userMessage })
   
   chatLoading.value = true
   
-  // 添加空的AI消息用于流式更新
+  // Add empty AI message for streaming update
   const assistantMsgIndex = chatHistory.value.length
   chatHistory.value.push({ 
     role: 'assistant', 
@@ -145,7 +145,7 @@ const sendChat = async () => {
       
       buffer += decoder.decode(value, { stream: true })
       
-      // 处理完整的SSE消息
+      // Process complete SSE messages
       const lines = buffer.split('\n\n')
       buffer = lines.pop() || ''
       
@@ -174,7 +174,7 @@ const sendChat = async () => {
               break
             }
             
-            // 自动滚动
+            // Auto-scroll
             setTimeout(() => scrollToBottom(), 50)
             
           } catch (e) {
@@ -184,7 +184,7 @@ const sendChat = async () => {
       }
     }
     
-    // 如果没有收到内容，移除空消息
+    // If no content received, remove empty message
     if (!chatHistory.value[assistantMsgIndex].content && !chatHistory.value[assistantMsgIndex].thinking) {
       chatHistory.value.splice(assistantMsgIndex, 1)
       chatHistory.value.pop()
@@ -205,10 +205,10 @@ const sendChat = async () => {
 // Clear Chat
 const clearChat = () => {
   chatHistory.value = []
-  ElMessage.info('对话已清空')
+  ElMessage.info('Chat cleared')
 }
 
-// 滚动到底部
+// Scroll to bottom
 const scrollToBottom = () => {
   if (chatMessages.value) {
     chatMessages.value.scrollTop = chatMessages.value.scrollHeight

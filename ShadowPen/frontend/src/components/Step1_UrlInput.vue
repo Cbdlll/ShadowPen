@@ -1,14 +1,14 @@
-<!-- 步骤1：URL输入 -->
+<!-- Step 1: URL Input -->
 <template>
   <div class="url-input-step">
     <div class="step-content">
       <div class="welcome-section">
-        <h1 class="step-title">🛡️ 开始XSS安全扫描</h1>
-        <p class="step-description">Enter Target URL网站URL，我们将智能爬取并发现潜在的XSS注入点</p>
+        <h1 class="step-title">🛡️ XSS Security Scan</h1>
+        <p class="step-description">Enter the target URL. We will intelligently crawl and discover potential XSS injection points.</p>
       </div>
 
       <el-form :model="form" :rules="rules" ref="formRef" label-position="top" size="large">
-        <el-form-item label="目标URL" prop="url">
+        <el-form-item label="Target URL" prop="url">
           <el-input
             v-model="form.url"
             placeholder="https://example.com"
@@ -26,25 +26,25 @@
           </template>
         </el-form-item>
 
-        <!-- 高级选项 -->
+        <!-- Advanced Options -->
         <el-collapse v-model="activeCollapse" class="advanced-options">
-          <el-collapse-item title="⚙️ 高级选项" name="advanced">
-            <el-form-item label="最大爬取深度">
+          <el-collapse-item title="⚙️ Advanced Options" name="advanced">
+            <el-form-item label="Max Crawl Depth">
               <el-slider v-model="form.maxDepth" :min="1" :max="10" show-stops />
-              <span class="option-hint">当前：{{ form.maxDepth }} 层（深度越大，发现越多，但耗时越长）</span>
+              <span class="option-hint">Current: {{ form.maxDepth }} level(s). Greater depth discovers more but takes longer.</span>
             </el-form-item>
 
-            <el-form-item label="最大页面数">
+            <el-form-item label="Max Pages">
               <el-input-number v-model="form.maxPages" :min="5" :max="100" :step="5" />
-              <span class="option-hint">限制爬取页面数量，避免过度爬取</span>
+              <span class="option-hint">Limit the number of pages to crawl.</span>
             </el-form-item>
           </el-collapse-item>
         </el-collapse>
       </el-form>
 
-      <!-- 示例URL -->
+      <!-- Example URLs -->
       <div class="examples">
-        <span class="examples-label">示例URL：</span>
+        <span class="examples-label">Example URLs:</span>
         <el-tag 
           v-for="example in examples" 
           :key="example"
@@ -56,16 +56,16 @@
       </div>
     </div>
 
-    <!-- 操作栏 -->
+    <!-- Action Bar -->
     <div class="step-actions">
-      <el-button size="large" disabled>← 上一步</el-button>
+      <el-button size="large" disabled>← Previous</el-button>
       <el-button 
         type="primary" 
         size="large"
         @click="handleStart"
         :loading="starting"
       >
-        开始爬取 →
+        Start Crawling →
       </el-button>
     </div>
   </div>
@@ -95,11 +95,11 @@ const examples = [
 
 const rules = {
   url: [
-    { required: true, message: '请Enter Target URLURL', trigger: 'blur' },
-    { 
-      pattern: /^https?:\/\/.+/, 
-      message: 'URL必须以http://或https://开头', 
-      trigger: 'blur' 
+    { required: true, message: 'Please enter the target URL', trigger: 'blur' },
+    {
+      pattern: /^https?:\/\/.+/,
+      message: 'URL must start with http:// or https://',
+      trigger: 'blur'
     }
   ]
 }
@@ -107,13 +107,13 @@ const rules = {
 const handleStart = async () => {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) {
-    ElMessage.warning('请检查输入')
+    ElMessage.warning('Please check your input')
     return
   }
 
   starting.value = true
   
-  // 延迟一点让用户看到loading状态
+  // Brief delay so user can see loading state
   setTimeout(() => {
     emit('next', {
       url: form.url,

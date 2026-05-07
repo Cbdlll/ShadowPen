@@ -1,22 +1,22 @@
 """
-XSS 爬虫引擎
+XSS Crawler Engine
 
-模块化、高解耦的 XSS 攻击面探测爬虫
+Modular, loosely coupled XSS attack surface detection crawler
 """
 from .crawler import XSSSurfaceCrawler, crawl_surface
 from .config import CrawlerConfig
 from .models import AttackSurface, CrawlResult, ParamType, SourceType
 
-# 提供兼容 main.py 的接口
+# Provide interface compatible with main.py
 async def crawl_target(url: str, max_pages: int = 10) -> dict:
-    """爬取目标 URL（兼容接口）
-    
+    """Crawl target URL (compatible interface)
+
     Args:
-        url: 目标 URL
-        max_pages: 最大爬取页数
-        
+        url: Target URL
+        max_pages: Maximum pages to crawl
+
     Returns:
-        包含攻击面的字典
+        Dictionary containing attack surfaces
     """
     result = await crawl_surface(url, max_pages=max_pages)
     return result.to_dict()

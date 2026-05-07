@@ -1,34 +1,34 @@
 async def _submit_all_forms(self, page: Page, traffic_interceptor, base_url: str):
-    """主动提交页面上的所有表单 (**BUG FIX: 主动触发网络请求**)
-    
+    """Proactively submit all forms on the page (**BUG FIX: actively trigger network requests**)
+
     Args:
-        page: 页面对象
-        traffic_interceptor: 流量拦截器
-        base_url: 基础URL
+        page: Page object
+        traffic_interceptor: Traffic interceptor
+        base_url: Base URL
     """
     try:
-        # 查找所有表单
+        # Find all forms
         forms = await page.query_selector_all('form')
         
         if not forms:
             return
         
-        logger.info(f"发现 {len(forms)} 个表单,准备主动提交")
+        logger.info(f"Found {len(forms)} forms, preparing to submit")
         
         for idx, form in enumerate(forms):
             try:
-                # 获取表单的 action 和 method
+                # Get form action and method
                 action = await form.get_attribute('action') or ''
                 method = (await form.get_attribute('method') or 'GET').upper()
                 
-                # 查找表单内的所有输入元素
+                # Find all input elements in the form
                 inputs = await form.query_selector_all('input:not([type="hidden"]), textarea, select')
                 
                 if not inputs:
-                    logger.debug(f"表单 {idx} 无输入元素,跳过")
+                    logger.debug(f"Form {idx} has no input elements, skipping")
                     continue
                 
-                # 填充表单
+                # Fill form
                 filled_count = 0
                 for input_elem in inputs:
                     input_type = await input_elem.get_attribute('type') or 'text'
@@ -37,7 +37,7 @@ async def _submit_all_forms(self, page: Page, traffic_interceptor, base_url: str
                     if not input_name:
                         continue
                     
-                    # 根据类型填充测试数据
+                    # Fill test data based on type
                     try:
                         if input_type in ['text', 'search', 'url']:
                             await input_elem.fill(f"XSS_Test_{input_name}")
@@ -52,7 +52,7 @@ async def _submit_all_forms(self, page: Page, traffic_interceptor, base_url: str
                         elif input_elem.tag_name == 'textarea':
                             await input_elem.fill(f"XSS_Content_{input_name}")
                         elif input_elem.tag_name == 'select':
-                            # 选择第一个非空选项
+                            # Select first non-empty option
                             try:
                                 await input_elem.select_option(index=1)
                             except:
@@ -60,26 +60,26 @@ async def _submit_all_forms(self, page: Page, traffic_interceptor, base_url: str
                         
                         filled_count += 1
                     except Exception as e:
-                        logger.debug(f"填充输入框失败: {input_name} - {e}")
+                        logger.debug(f"Failed to fill input: {input_name} - {e}")
                 
                 if filled_count == 0:
                     continue
                 
-                # 更新流量拦截器上下文
+                # Update traffic interceptor context
                 traffic_interceptor.action_trigger = f"form_submit_{idx}"
                 
-                # 查找提交按钮
+                # Find submit button
                 submit_btn = await form.query_selector('button[type="submit"], input[type="submit"], button:not([type="button"])')
                 
                 if submit_btn:
-                    logger.info(f"提交表单 {idx} (action={action}, method={method})")
+                    logger.info(f"Submit form {idx} (action={action}, method={method})")
                     await submit_btn.click(timeout=3000)
                 else:
-                    # 没有提交按钮,尝试直接提交表单
+                    # No submit button found, attempting direct form submission
                     await form.evaluate("form => form.submit()")
-                    logger.info(f"直接提交表单 {idx}")
+                    logger.info(f"Direct form submission {idx}")
                 
-                # 等待请求完成
+                # Wait for request to complete
                 await asyncio.sleep(2)
                 try:
                     await page.wait_for_load_state("networkidle", timeout=3000)
@@ -87,8 +87,8 @@ async def _submit_all_forms(self, page: Page, traffic_interceptor, base_url: str
                     pass
                 
             except Exception as e:
-                logger.debug(f"表单 {idx} 提交失败: {e}")
+                logger.debug(f"Form {idx} submission failed: {e}")
                 continue
         
     except Exception as e:
-        logger.debug(f"表单提交处理失败: {e}")
+        logger.debug(f"Form submission processing failed: {e}")

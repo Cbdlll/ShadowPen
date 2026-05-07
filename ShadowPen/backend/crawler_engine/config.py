@@ -1,7 +1,7 @@
 """
-XSS 爬虫引擎配置模块
+XSS Crawler Engine Configuration Module
 
-定义爬虫运行时配置参数
+Defines crawler runtime configuration parameters
 """
 from dataclasses import dataclass, field
 from typing import Optional, List
@@ -10,50 +10,50 @@ import os
 
 @dataclass
 class CrawlerConfig:
-    """爬虫配置类"""
-    
-    # 浏览器配置
+    """Crawler configuration class"""
+
+    # Browser configuration
     headless: bool = True
     browser_type: str = "chromium"  # chromium, firefox, webkit
     
-    # 超时配置（毫秒）
-    navigation_timeout: int = 30000  # 30秒
-    wait_for_load_timeout: int = 5000  # 5秒
-    interaction_timeout: int = 3000  # 3秒
+    # Timeout configuration (milliseconds)
+    navigation_timeout: int = 30000  # 30 seconds
+    wait_for_load_timeout: int = 5000  # 5 seconds
+    interaction_timeout: int = 3000  # 3 seconds
     
-    # 并发配置
+    # Concurrency configuration
     max_concurrent_pages: int = 3
     
-    # 爬取限制
+    # Crawl limits
     max_depth: int = 3
     max_pages_per_domain: int = 50
-    scope_domains: List[str] = field(default_factory=list)  # 允许爬取的额外域名范围
+    scope_domains: List[str] = field(default_factory=list)  # Additional allowed domain scope for crawling
     
-    # 网络配置
+    # Network configuration
     enable_javascript: bool = True
     block_resources: List[str] = field(default_factory=lambda: ["image", "stylesheet", "font", "media"])
     
-    # 配置化: 代码开头应有配置区，可设置 MAX_CONCURRENCY (并发数), CRAWL_DEPTH (点击深度), GOSPIDER_PATH (工具路径)。
-    
-    # 交互配置
+    # Configuration: Code header should have a config section for MAX_CONCURRENCY, CRAWL_DEPTH, GOSPIDER_PATH.
+
+    # Interaction configuration
     enable_form_submission: bool = True
     enable_button_clicks: bool = True
     form_fill_timeout: int = 2000
     
-    # 跨域捕获配置
-    enable_cross_origin_capture: bool = True  # 启用跨域无差别捕获（关键！）
+    # Cross-origin capture configuration
+    enable_cross_origin_capture: bool = True  # Enable cross-origin indiscriminate capture (critical!)
     
-    # 安全配置
+    # Security configuration
     respect_robots_txt: bool = False
     user_agent: Optional[str] = None
     
-    # 调试配置
+    # Debug configuration
     debug: bool = False
     screenshot_on_error: bool = False
     
     @classmethod
     def from_env(cls) -> "CrawlerConfig":
-        """从环境变量加载配置"""
+        """Load configuration from environment variables"""
         return cls(
             headless=os.getenv("CRAWLER_HEADLESS", "true").lower() == "true",
             browser_type=os.getenv("CRAWLER_BROWSER", "chromium"),

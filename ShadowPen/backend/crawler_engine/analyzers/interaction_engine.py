@@ -1,7 +1,7 @@
 """
-交互引擎模块
+Interaction Engine Module
 
-主动触发页面交互，捕获隐藏的 API 请求
+Proactively trigger page interactions to capture hidden API requests
 """
 from typing import List
 from playwright.async_api import Page, TimeoutError as PlaywrightTimeout
@@ -15,12 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 class InteractionEngine:
-    """交互触发引擎
-    
-    功能:
-    - 自动填充并提交表单
-    - 点击可交互元素
-    - 等待网络请求完成
+    """Interaction Trigger Engine
+
+    Features:
+    - Auto-fill and submit forms
+    - Click interactive elements
+    - Wait for network requests to complete
     """
     
     def __init__(self, fill_timeout: int = 2000, click_timeout: int = 3000):
@@ -32,79 +32,79 @@ class InteractionEngine:
         page: Page,
         interceptor: TrafficInterceptor
     ) -> List[AttackSurface]:
-        """触发页面交互
-        
+        """Trigger page interactions
+
         Args:
-            page: Playwright 页面对象
-            interceptor: 流量拦截器（用于捕获交互产生的请求）
-            
+            page: Playwright page object
+            interceptor: Traffic interceptor (for capturing interaction-triggered requests)
+
         Returns:
-            交互后发现的攻击面列表
+            List of attack surfaces discovered after interaction
         """
         surfaces = []
         
-        # 记录初始捕获数量
+        # Record initial capture count
         initial_count = len(interceptor.get_captured_surfaces())
         
-        # 1. 自动填充并提交表单
+        # 1. Auto-fill and submit forms
         await self._fill_and_submit_forms(page)
         
-        # 2. 点击可交互元素
+        # 2. Click interactive elements
         await self._click_interactive_elements(page)
         
-        # 3. 等待网络请求完成
-        await asyncio.sleep(1)  # 给请求一些时间完成
+        # 3. Wait for network requests to complete
+        await asyncio.sleep(1)  # Give requests some time to complete
         
-        # 4. 获取交互后捕获的攻击面
+        # 4. Get attack surfaces captured after interaction
         all_surfaces = interceptor.get_captured_surfaces()
         new_surfaces = all_surfaces[initial_count:]
         
-        # 标记来源为交互后流量
+        # Mark source as post-interaction traffic
         for surface in new_surfaces:
             surface.source = SourceType.TRAFFIC_INTERCEPT_AFTER_INTERACTION
             surfaces.append(surface)
         
-        logger.info(f"交互触发完成，新增 {len(surfaces)} 个攻击面")
+        logger.info(f"Interaction trigger completed, added {len(surfaces)} new attack surfaces")
         return surfaces
     
     async def _fill_and_submit_forms(self, page: Page):
-        """自动填充并提交表单"""
+        """Auto-fill and submit forms"""
         try:
-            # 查找所有表单
+            # Find all forms
             forms = await page.query_selector_all('form')
             
             for form in forms:
                 try:
-                    # 填充表单字段
+                    # Fill form fields
                     await self._fill_form(page, form)
                     
-                    # 查找提交按钮
+                    # Find submit button
                     submit_btn = await form.query_selector(
                         'button[type="submit"], input[type="submit"]'
                     )
                     
                     if submit_btn:
-                        # 点击提交按钮
+                        # Click submit button
                         await submit_btn.click(timeout=self.click_timeout)
-                        # 等待可能的导航或请求
+                        # Wait for possible navigation or request
                         await asyncio.sleep(0.5)
                     else:
-                        # 尝试直接提交表单
+                        # Attempt direct form submission
                         await form.evaluate('form => form.submit()')
                         await asyncio.sleep(0.5)
                         
                 except PlaywrightTimeout:
-                    logger.debug("表单提交超时")
+                    logger.debug("Form submission timeout")
                 except Exception as e:
-                    logger.debug(f"表单处理失败: {e}")
+                    logger.debug(f"Form processing failed: {e}")
                     continue
                     
         except Exception as e:
-            logger.debug(f"表单填充失败: {e}")
+            logger.debug(f"Form fill failed: {e}")
     
     async def _fill_form(self, page: Page, form):
-        """填充单个表单"""
-        # 查找表单内的输入字段
+        """Fill single form"""
+        # Find input fields in form
         inputs = await form.query_selector_all(
             'input:not([type="submit"]):not([type="button"]):not([type="hidden"]), textarea'
         )
@@ -113,7 +113,7 @@ class InteractionEngine:
             try:
                 input_type = await input_elem.get_attribute('type') or 'text'
                 
-                # 根据类型填充测试数据
+                # Fill test data based on type
                 test_value = self._get_test_value(input_type)
                 
                 await input_elem.fill(test_value, timeout=self.fill_timeout)
@@ -121,11 +121,11 @@ class InteractionEngine:
             except PlaywrightTimeout:
                 continue
             except Exception as e:
-                logger.debug(f"输入填充失败: {e}")
+                logger.debug(f"Input fill failed: {e}")
                 continue
     
     def _get_test_value(self, input_type: str) -> str:
-        """获取测试填充值"""
+        """Get test fill value"""
         test_values = {
             'text': 'test_value',
             'email': 'test@example.com',
@@ -140,38 +140,38 @@ class InteractionEngine:
         return test_values.get(input_type, 'test')
     
     async def _click_interactive_elements(self, page: Page):
-        """点击可交互元素"""
-        # 可交互元素选择器
+        """Click interactive elements"""
+        # Interactive element selectors
         selectors = [
-            'button:not([type="submit"])',  # 非提交按钮
-            'a[href="#"]',                   # 锚点链接（可能触发 JS）
-            '[onclick]',                     # 带 onClick 事件的元素
+            'button:not([type="submit"])',  # Non-submit button
+            'a[href="#"]',                   # Anchor link (may trigger JS)
+            '[onclick]',                     # Elements with onClick event
         ]
         
         for selector in selectors:
             try:
                 elements = await page.query_selector_all(selector)
                 
-                # 限制点击数量，避免过度交互
-                for element in elements[:5]:  # 每种类型最多点击 5 个
+                # Limit clicks to avoid excessive interaction
+                for element in elements[:5]:  # Max 5 clicks per type
                     try:
-                        # 检查元素是否可见
+                        # Check if element is visible
                         is_visible = await element.is_visible()
                         if not is_visible:
                             continue
                         
-                        # 点击元素
+                        # Click element
                         await element.click(timeout=self.click_timeout)
                         
-                        # 短暂等待
+                        # Brief wait
                         await asyncio.sleep(0.3)
                         
                     except PlaywrightTimeout:
                         continue
                     except Exception as e:
-                        logger.debug(f"元素点击失败: {e}")
+                        logger.debug(f"Element click failed: {e}")
                         continue
                         
             except Exception as e:
-                logger.debug(f"交互元素查找失败: {e}")
+                logger.debug(f"Interactive element lookup failed: {e}")
                 continue

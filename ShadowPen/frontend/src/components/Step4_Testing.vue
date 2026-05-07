@@ -1,13 +1,13 @@
-<!-- 步骤4：XSS测试 -->
+<!-- Step 4: XSS Testing -->
 <template>
   <div class="testing-step">
     <div class="step-content">
-      <h2 class="step-title">🚀 XSS漏洞测试</h2>
+      <h2 class="step-title">🚀 XSS Vulnerability Testing</h2>
 
       <div class="test-layout">
-        <!-- 左侧：测试目标信息 -->
+        <!-- Left: Test Target Info -->
         <div class="test-target-panel">
-          <h3 class="panel-title">测试目标</h3>
+          <h3 class="panel-title">Test Target</h3>
           
           <div class="target-info-card">
             <div class="info-item">
@@ -28,10 +28,10 @@
             </div>
           </div>
 
-          <!-- 参数选择器 -->
+          <!-- Parameter Selector -->
           <div class="param-selector">
-            <label class="selector-label">选择注入参数:</label>
-            <el-select v-model="selectedParam" placeholder="选择参数" size="large">
+            <label class="selector-label">Select Injection Parameter:</label>
+            <el-select v-model="selectedParam" placeholder="Select parameter" size="large">
               <el-option 
                 v-for="param in selectedPoint.injection_points"
                 :key="param.name"
@@ -47,7 +47,7 @@
           </div>
         </div>
 
-        <!-- 右侧：Payload编辑器 -->
+        <!-- Right: Payload Editor -->
         <div class="payload-panel">
           <h3 class="panel-title">Payload</h3>
           
@@ -55,14 +55,14 @@
             v-model="payload" 
             type="textarea" 
             :rows="8"
-            placeholder="输入XSS Payload..."
+            placeholder="Enter XSS Payload..."
             class="payload-editor"
           />
           
           <div class="payload-actions">
             <el-button @click="showPayloadLib = true">
               <el-icon><Collection /></el-icon>
-              Payload库
+              Payload Library
             </el-button>
             <el-button 
               type="primary" 
@@ -71,13 +71,13 @@
               size="large"
             >
               <el-icon><Promotion /></el-icon>
-              测试 Payload
+              Test Payload
             </el-button>
           </div>
         </div>
       </div>
 
-      <!-- 测试进度 -->
+      <!-- Test Progress -->
       <transition name="fade">
         <div v-if="testing" class="test-progress-card">
           <el-progress :percentage="testProgress" :indeterminate="testProgress === 0" />
@@ -95,7 +95,7 @@
             {{ testResult.success ? '✅' : '❌' }}
           </div>
           <div class="result-content">
-            <h3>{{ testResult.success ? 'XSSVulnerability Confirmed！' : '未检测到XSS' }}</h3>
+            <h3>{{ testResult.success ? 'XSS Vulnerability Confirmed!' : 'No XSS Detected' }}</h3>
             <p>{{ testResult.message }}</p>
           </div>
           
@@ -103,33 +103,33 @@
             <el-alert type="info" :closable="false">
               <template #title>
                 <el-icon><MagicStick /></el-icon>
-                AI正在后台尝试Payload变异，请留意右侧Shadow面板...
+                AI is attempting payload mutation in the background, please check the Shadow panel on the right...
               </template>
             </el-alert>
           </div>
 
           <div class="result-actions">
-            <el-button @click="testResult = null">清除</el-button>
+            <el-button @click="testResult = null">Clear</el-button>
             <el-button v-if="testResult.success" type="primary" @click="exportResult">
-              导出报告
+              Export Report
             </el-button>
           </div>
         </div>
       </transition>
     </div>
 
-    <!-- 操作栏 -->
+    <!-- Action Bar -->
     <div class="step-actions">
-      <el-button size="large" @click="$emit('prev')">← 重选注入点</el-button>
-      <el-button size="large" @click="resetAndGoHome">Complete测试</el-button>
+      <el-button size="large" @click="$emit('prev')">← Re-select Injection Point</el-button>
+      <el-button size="large" @click="resetAndGoHome">Complete Testing</el-button>
     </div>
 
-    <!-- Payload库抽屉 -->
-    <el-drawer v-model="showPayloadLib" title="Payload库" size="500px">
+    <!-- Payload Library Drawer -->
+    <el-drawer v-model="showPayloadLib" title="Payload Library" size="500px">
       <div class="payload-library">
         <el-input 
           v-model="payloadSearch" 
-          placeholder="搜索payload..." 
+          placeholder="Search payload..." 
           :prefix-icon="Search"
           class="mb-3"
         />
@@ -142,7 +142,7 @@
             @click="applyPayload(item)"
           >
             <code>{{ item }}</code>
-            <el-button size="small" text>应用</el-button>
+            <el-button size="small" text>Apply</el-button>
           </div>
         </div>
       </div>
@@ -167,7 +167,7 @@ const props = defineProps({
 
 const emit = defineEmits(['prev', 'reset'])
 
-// 状态
+// State
 const selectedParam = ref(props.selectedPoint.injection_points?.[0]?.name || '')
 const payload = ref('<' + 'script>alert(document.cookie)<' + '/script>')
 const testing = ref(false)
@@ -177,7 +177,7 @@ const testResult = ref(null)
 const showPayloadLib = ref(false)
 const payloadSearch = ref('')
 
-// Payload库
+// Payload library
 const payloadLibrary = [
   '<' + 'script>alert(1)<' + '/script>',
   '<img src=x onerror=alert(1)>',
@@ -203,12 +203,12 @@ const filteredPayloads = computed(() => {
 // Test Payload
 const testPayload = async () => {
   if (!payload.value.trim()) {
-    ElMessage.warning('请输入Payload')
+    ElMessage.warning('Please enter a payload')
     return
   }
   
   if (!selectedParam.value) {
-    ElMessage.warning('请选择注入参数')
+    ElMessage.warning('Please select an injection parameter')
     return
   }
 
@@ -216,13 +216,13 @@ const testPayload = async () => {
   testProgress.value = 0
   testResult.value = null
 
-  // 模拟测试进度
+  // Simulate test progress
   const statusMessages = [
-    '正在构造请求...',
-    '发送Payload到目标...',
-    '等待响应...',
-    '分析响应内容...',
-    '检测XSS执行...'
+    'Constructing request...',
+    'Sending payload to target...',
+    'Waiting for response...',
+    'Analyzing response content...',
+    'Detecting XSS execution...'
   ]
   
   let msgIndex = 0
@@ -250,9 +250,9 @@ const testPayload = async () => {
     testResult.value = response.data
 
     if (response.data.success) {
-      ElMessage.success('XSSVulnerability Confirmed！')
+      ElMessage.success('XSS Vulnerability Confirmed!')
     } else {
-      ElMessage.warning('未检测到XSS执行')
+      ElMessage.warning('No XSS execution detected')
     }
   } catch (error) {
     clearInterval(progressInterval)
@@ -263,14 +263,14 @@ const testPayload = async () => {
   }
 }
 
-// 应用Payload
+// Apply Payload
 const applyPayload = (payloadText) => {
   payload.value = payloadText
   showPayloadLib.value = false
-  ElMessage.success('Payload已应用')
+  ElMessage.success('Payload applied')
 }
 
-// 导出结果
+// Export results
 const exportResult = () => {
   const report = {
     target: props.selectedPoint.url,
@@ -288,15 +288,15 @@ const exportResult = () => {
   a.download = `xss-report-${Date.now()}.json`
   a.click()
   
-  ElMessage.success('报告已导出')
+  ElMessage.success('Report exported')
 }
 
-// 重置并回首页
+// Reset and go home
 const resetAndGoHome = () => {
   emit('reset')
 }
 
-// 辅助函数
+// Helper functions
 const getMethodColor = (method) => {
   const colors = {
     'GET': '',

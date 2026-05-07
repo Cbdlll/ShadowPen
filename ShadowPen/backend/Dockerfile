@@ -1,7 +1,7 @@
 FROM kalilinux/kali-rolling:latest
 
 # Install system dependencies for Python, Playwright, and Go
-# 这一层只有在 Dockerfile 修改时才会重建
+# This layer is only rebuilt when the Dockerfile is modified
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
@@ -42,6 +42,11 @@ RUN GO111MODULE=on go install github.com/projectdiscovery/katana/cmd/katana@late
     && mv /root/go/bin/katana /usr/local/bin/katana \
     && chmod +x /usr/local/bin/katana
 
+# Install GoSpider (fast web spider)
+RUN GO111MODULE=on go install github.com/jaeles-project/gospider@latest \
+    && mv /root/go/bin/gospider /usr/local/bin/gospider \
+    && chmod +x /usr/local/bin/gospider
+
 WORKDIR /app
 
 # Create and activate virtual environment (outside /app to avoid volume mount override)
@@ -49,14 +54,14 @@ ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Install Python dependencies (单独一层，只有 requirements.txt 变化时才重建)
+# Install Python dependencies (separate layer, only rebuilt when requirements.txt changes)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright browsers (单独一层，会被缓存)
+# Install Playwright browsers (separate layer, will be cached)
 RUN playwright install chromium
 
-# Copy application code (最后复制，确保代码变化只影响这一层)
+# Copy application code (copy last to ensure code changes only affect this layer)
 COPY . .
 
 # Expose port

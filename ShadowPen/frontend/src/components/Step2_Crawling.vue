@@ -144,7 +144,7 @@ const addActivity = (message, type = 'info', icon = '📍') => {
   })
   
   // No longer limit quantity, keep all activity records
-  // 如果需要性能优化，可以限制为更大的数字如 100 items
+  // If performance optimization needed, limit to a larger number like 100 items
   if (recentActivities.value.length > 100) {
     recentActivities.value = recentActivities.value.slice(0, 100)
   }
@@ -218,7 +218,7 @@ const startLLMAnalysis = async (surfaces) => {
     })
     
     if (!response.ok) {
-      throw new Error('LLM Analysis请求失败')
+      throw new Error('LLM Analysis request failed')
     }
     
     const reader = response.body.getReader()
@@ -256,7 +256,7 @@ const startLLMAnalysis = async (surfaces) => {
               crawlResult.value.analysis = chunk.result
               progressPercentage.value = 100
               progressStatus.value = 'success'
-              progressMessage.value = 'LLM Analysis完成！'
+              progressMessage.value = 'LLM Analysis Completed!'
               crawlComplete.value = true
               
               const highValueCount = chunk.result.high_value_surfaces?.length || 0
@@ -285,12 +285,12 @@ const startLLMAnalysis = async (surfaces) => {
     }
     
   } catch (error) {
-    console.error('LLM Analysis失败:', error)
-    addActivity(`LLM Analysis失败: ${error.message}`, 'warning', '⚠️')
+    console.error('LLM Analysis failed:', error)
+    addActivity(`LLM Analysis failed: ${error.message}`, 'warning', '⚠️')
     
     // Even if analysis fails, allow to continue
     crawlComplete.value = true
-    ElMessage.warning('LLM Analysis失败，但您仍可查看原始攻击面')
+    ElMessage.warning('LLM Analysis failed, but you can still view the raw attack surfaces')
   }
 }
 
@@ -307,7 +307,7 @@ const simulateProgress = () => {
     { type: 'info', icon: '🧩', getMessage: () => 'Detected SPA route change' },
     { type: 'form', icon: '🔘', getMessage: () => 'Detected dynamic form' },
     { type: 'api', icon: '📡', getMessage: () => 'Inferred API detail page URL' },
-    { type: 'info', icon: '🎨', getMessage: () => '分析页面DOM结构' }
+    { type: 'info', icon: '🎨', getMessage: () => 'Analyzing page DOM structure' }
   ]
   
   const messages = [
@@ -335,28 +335,28 @@ const simulateProgress = () => {
     progressPercentage.value = Math.floor(currentProgress)
     progressMessage.value = messages[Math.floor(Math.random() * messages.length)]
     
-    // 模拟各种活动
+    // Simulate various activities
     const rand = Math.random()
     
     if (rand > 0.3) {
-      // 60%概率：访问页面
+      // 60% probability: visit page
       pagesVisited.value++
       visitCount++
       const template = activityTemplates[0]
       addActivity(template.getMessage(visitCount), template.type, template.icon)
     } else if (rand > 0.15) {
-      // 15%概率：Injection Points Found
+      // 15% probability: injection points found
       injectionPointsFound.value++
       injectCount++
       const template = activityTemplates[3]
       addActivity(template.getMessage(injectCount), template.type, template.icon)
     } else {
-      // 25%概率：其他活动
+      // 25% probability: other activities
       const template = activityTemplates[Math.floor(Math.random() * activityTemplates.length)]
       addActivity(template.getMessage(), template.type, template.icon)
     }
     
-    // 偶尔更新请求捕获数
+    // Occasionally update request capture count
     if (Math.random() > 0.7) {
       requestsCaptured.value++
     }
@@ -369,14 +369,14 @@ const handleCancel = () => {
   emit('cancel')
 }
 
-// 下一步
+// Next step
 const handleNext = () => {
   emit('next', crawlResult.value)
 }
 
-// 生命周期
+// Lifecycle
 onMounted(() => {
-  // 启动计时器
+  // Start timer
   const startTime = Date.now()
   timerInterval = setInterval(() => {
     elapsedTime.value = Math.floor((Date.now() - startTime) / 1000)
@@ -385,11 +385,11 @@ onMounted(() => {
   // Start Crawling
   startCrawl()
   
-  // 模拟进度
+  // Simulate progress
   simulateProgress()
   
-  // TODO: 连接WebSocket接收实时进度
-  // 当后端支持实时进度推送时启用
+  // TODO: Connect WebSocket to receive real-time progress
+  // Enable when backend supports real-time progress push
 })
 
 onUnmounted(() => {
@@ -545,7 +545,7 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* 活动图标 */
+/* Activity icon */
 .activity-icon {
   font-size: 18px;
   flex-shrink: 0;
@@ -553,7 +553,7 @@ onUnmounted(() => {
   text-align: center;
 }
 
-/* 活动内容 */
+/* Activity content */
 .activity-content {
   flex: 1;
   display: flex;
@@ -573,7 +573,7 @@ onUnmounted(() => {
   font-size: 11px;
 }
 
-/* 不同类型活动的颜色 */
+/* Colors for different activity types */
 .activity-visit {
   border-left-color: #409eff;
   background: linear-gradient(to right, #ecf5ff, white);

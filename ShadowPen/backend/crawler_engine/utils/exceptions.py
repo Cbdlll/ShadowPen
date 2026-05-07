@@ -1,30 +1,30 @@
 """
-工具模块：自定义异常
+Utils module: Custom Exceptions
 
-定义爬虫引擎使用的异常类
+Defines exception classes used by the crawler engine
 """
 
 
 class CrawlerException(Exception):
-    """爬虫基础异常"""
+    """Base crawler exception"""
     pass
 
 
 class TimeoutException(CrawlerException):
-    """超时异常"""
+    """Timeout exception"""
     pass
 
 
 class BrowserException(CrawlerException):
-    """浏览器相关异常"""
+    """Browser-related exception"""
     pass
 
 
 class NavigationException(CrawlerException):
-    """页面导航异常"""
+    """Page navigation exception"""
     pass
 
 
 class InteractionException(CrawlerException):
-    """交互触发异常"""
+    """Interaction exception"""
     pass

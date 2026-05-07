@@ -1,4 +1,4 @@
-"""工具模块初始化"""
+"""Utils module initialization"""
 from .exceptions import (
     CrawlerException,
     TimeoutException,

@@ -1,4 +1,4 @@
-<!-- 步骤指示器组件 -->
+<!-- Step Indicator Component -->
 <template>
   <div class="step-indicator">
     <div 
@@ -31,10 +31,10 @@ defineProps({
 })
 
 const steps = [
-  { label: '输入URL' },
+  { label: 'Enter URL' },
   { label: 'Smart Crawling' },
   { label: 'Select Injection Point' },
-  { label: 'XSS测试' }
+  { label: 'XSS Testing' }
 ]
 </script>
 

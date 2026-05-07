@@ -1,15 +1,15 @@
 """
-混合式 XSS 攻击面爬虫 (crawler.py)
+Hybrid XSS attack surface crawler (crawler.py)
 
-功能：
-- Stage 1: 使用 GoSpider 进行全量资产发现（子域名、JS 文件、URL）
-- Stage 2: 使用 Playwright + DeepInteractionEngine 进行深度交互探测（Depth=2 BFS）
-- 输出：攻击面列表（result.json），包含 URL、参数、深度、触发链等信息
+Features:
+- Stage 1: Full asset discovery using GoSpider (subdomains, JS files, URLs)
+- Stage 2: Deep interaction probing using Playwright + DeepInteractionEngine (Depth=2 BFS)
+- Output: Attack surface list (result.json) containing URLs, parameters, depth, trigger chains, etc.
 
-用法：
+Usage:
     python crawler.py <target_url>
-    
-示例：
+
+Example:
     python crawler.py http://127.0.0.1:3000
 """
 import asyncio
@@ -32,39 +32,39 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ScannerConfig:
-    """扫描器配置"""
+    """Scanner configuration"""
     MAX_ACTIONS_PER_PAGE: int = 50
     MAX_DEPTH: int = 2
-    GLOBAL_TIMEOUT: int = 3600  # 1小时
+    GLOBAL_TIMEOUT: int = 3600  # 1 hour
     MAX_URLS: int = 100
     INTERACTION_TIMEOUT: int = 3000
     CONCURRENT_PAGES: int = 3
 
 
 class XSSScanner:
-    """智能混合架构 XSS 扫描器"""
+    """Intelligent hybrid architecture XSS scanner"""
     
     def __init__(self, config: ScannerConfig = None):
         self.config = config or ScannerConfig()
         self.writer = ResultWriter("result.json")
         self.gospider = GoSpiderWrapper()
         
-        # 全局去重管理器（所有 Worker 共享）
+        # Global deduplication manager (shared by all workers)
         from crawler_engine.utils import GlobalDeduplicationManager
         self.global_dedup = GlobalDeduplicationManager()
     
     async def scan(self, target_domain: str) -> str:
-        """主扫描流程
-        
+        """Main scan workflow
+
         Args:
-            target_domain: 目标域名
-            
+            target_domain: Target domain
+
         Returns:
-            result.json 文件路径
+            Path to result.json file
         """
-        logger.info(f"========== XSS 扫描器启动 ==========")
-        logger.info(f"目标: {target_domain}")
-        logger.info(f"配置: {self.config}")
+        logger.info(f"========== XSS Scanner Started ==========")
+        logger.info(f"Target: {target_domain}")
+        logger.info(f"Configuration: {self.config}")
         
         try:
             # Stage 1: Asset Discovery
@@ -73,28 +73,28 @@ class XSSScanner:
             # Stage 2: Deep Inspection
             await self._deep_inspection(urls)
             
-            logger.info(f"========== 扫描完成 ==========")
-            logger.info(f"结果已保存到: result.json")
-            
-            # 打印去重统计
+            logger.info(f"========== Scan Completed ==========")
+            logger.info(f"Results saved to: result.json")
+
+            # Print deduplication statistics
             self.global_dedup.print_stats()
             
             return "result.json"
             
         except asyncio.TimeoutError:
-            logger.error(f"扫描超时 ({self.config.GLOBAL_TIMEOUT}s)")
+            logger.error(f"Scan timed out ({self.config.GLOBAL_TIMEOUT}s)")
             raise
         except Exception as e:
-            logger.error(f"扫描失败: {e}", exc_info=True)
+            logger.error(f"Scan failed: {e}", exc_info=True)
             raise
     
     async def _asset_discovery(self, target: str) -> List[str]:
-        """Stage 1: 资产发现"""
+        """Stage 1: Asset discovery"""
         logger.info("=" * 60)
-        logger.info("Stage 1: 使用 GoSpider 进行资产发现")
+        logger.info("Stage 1: Asset discovery using GoSpider")
         logger.info("=" * 60)
         
-        # 检查 GoSpider 可用性
+        # Check GoSpider availability
         is_available = await self.gospider.check_availability()
         
         if is_available:
@@ -103,37 +103,37 @@ class XSSScanner:
                 concurrency=10,
                 depth=2
             )
-            logger.info(f"GoSpider 发现 {len(urls)} 个 URL")
+            logger.info(f"GoSpider discovered {len(urls)} URLs")
         else:
-            logger.warning("GoSpider 不可用，使用降级模式")
+            logger.warning("GoSpider unavailable, using fallback mode")
             urls = [target]
         
-        # URL 去重和过滤
+        # URL deduplication and filtering
         unique_urls = self._deduplicate_urls(urls, target)
-        logger.info(f"去重后: {len(unique_urls)} 个唯一 URL")
-        
-        # 限制数量
+        logger.info(f"After deduplication: {len(unique_urls)} unique URLs")
+
+        # Limit count
         if len(unique_urls) > self.config.MAX_URLS:
-            logger.warning(f"URL 数量超过限制({self.config.MAX_URLS})，截断处理")
+            logger.warning(f"URL count exceeds limit ({self.config.MAX_URLS}), truncating")
             unique_urls = unique_urls[:self.config.MAX_URLS]
         
         return unique_urls
     
     async def _deep_inspection(self, urls: List[str]):
-        """Stage 2: 深度探测"""
+        """Stage 2: Deep inspection"""
         logger.info("=" * 60)
-        logger.info("Stage 2: 深度交互探测")
+        logger.info("Stage 2: Deep interaction probing")
         logger.info("=" * 60)
-        logger.info(f"待探测 URL 数量: {len(urls)}")
-        
-        # 清空旧结果
+        logger.info(f"URLs to inspect: {len(urls)}")
+
+        # Clear old results
         self.writer.clear()
         
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             
             try:
-                # 分批并发处理
+                # Process in concurrent batches
                 for i in range(0, len(urls), self.config.CONCURRENT_PAGES):
                     batch = urls[i:i + self.config.CONCURRENT_PAGES]
                     tasks = [self._inspect_url(browser, url) for url in batch]
@@ -143,66 +143,66 @@ class XSSScanner:
                 await browser.close()
     
     async def _inspect_url(self, browser, url: str):
-        """深度检查单个 URL（4 层完整探测）"""
+        """Deep inspection of a single URL (4-layer full probing)"""
         context = None
         try:
-            logger.info(f"正在探测: {url}")
-            
-            # 创建独立上下文
+            logger.info(f"Inspecting: {url}")
+
+            # Create isolated context
             context = await browser.new_context()
             page = await context.new_page()
             
-            # ========== 第 1 层：URL 静态分析 ==========
+            # ========== Layer 1: URL static analysis ==========
             from crawler_engine.analyzers import URLAnalyzer
             url_analyzer = URLAnalyzer()
             url_surfaces = url_analyzer.analyze_url(url)
-            logger.debug(f"URL 分析: 发现 {len(url_surfaces)} 个攻击面")
+            logger.debug(f"URL analysis: found {len(url_surfaces)} attack surfaces")
             
-            # ========== 第 2 层：启动流量拦截（必须在导航前）==========
+            # ========== Layer 2: Start traffic interception (must be before navigation) ==========
             interceptor = TrafficInterceptor(
                 scope_domains=[],
-                capture_all=True,  # 跨域不过滤
+                capture_all=True,  # Do not filter cross-origin
                 page_url=url
             )
             await interceptor.start_interception(page)
             
-            # ========== 导航到页面 ==========
+            # ========== Navigate to page ==========
             await page.goto(url, wait_until="networkidle", timeout=30000)
             
-            # **SPA 等待机制**（关键！）
-            await asyncio.sleep(2)  # 等待 JavaScript 渲染
+            # **SPA wait mechanism** (critical!)
+            await asyncio.sleep(2)  # Wait for JavaScript rendering
             try:
                 await page.wait_for_load_state("domcontentloaded")
             except:
                 pass
             
-            # ========== 第 3 层：DOM 静态分析 ==========
+            # ========== Layer 3: DOM static analysis ==========
             from crawler_engine.analyzers import DOMAnalyzer
             dom_analyzer = DOMAnalyzer()
             dom_surfaces = await dom_analyzer.analyze_page(page, url)
-            logger.debug(f"DOM 静态分析: 发现 {len(dom_surfaces)} 个攻击面")
+            logger.debug(f"DOM static analysis: found {len(dom_surfaces)} attack surfaces")
             
-            # ========== 第 4 层：深度交互（Depth=2 BFS）==========
+            # ========== Layer 4: Deep interaction (Depth=2 BFS) ==========
             interaction_engine = DeepInteractionEngine(
                 max_depth=self.config.MAX_DEPTH,
                 max_actions=self.config.MAX_ACTIONS_PER_PAGE,
                 interaction_timeout=self.config.INTERACTION_TIMEOUT,
-                global_dedup=self.global_dedup  # 传递全局去重器
+                global_dedup=self.global_dedup  # Pass global deduplicator
             )
             
             interaction_surfaces = await interaction_engine.explore_page(page, interceptor, url)
-            logger.debug(f"深度交互探索: 发现 {len(interaction_surfaces)} 个攻击面")
+            logger.debug(f"Deep interaction exploration: found {len(interaction_surfaces)} attack surfaces")
             
-            # ========== 合并所有 4 层的攻击面 ==========
+            # ========== Merge all 4 layers of attack surfaces ==========
             all_surfaces = url_surfaces + dom_surfaces + interaction_surfaces
-            logger.info(f"✓ {url}: 总计发现 {len(all_surfaces)} 个攻击面 "
-                       f"(URL:{len(url_surfaces)} + DOM:{len(dom_surfaces)} + 交互:{len(interaction_surfaces)})")
+            logger.info(f"✓ {url}: Total {len(all_surfaces)} attack surfaces found "
+                       f"(URL:{len(url_surfaces)} + DOM:{len(dom_surfaces)} + Interaction:{len(interaction_surfaces)})")
             
-            # 保存结果(批量写入,启用去重)
+            # Save results (batch write, with deduplication enabled)
             simplified_surfaces = []
             for surface in all_surfaces:
                 surface_dict = surface.to_dict()
-                # 简化格式（仅保留 XSS 测试必需信息）
+                # Simplified format (only XSS test essentials)
                 simplified = {
                     "base_url": url,
                     "request_url": surface_dict["url"],
@@ -216,7 +216,7 @@ class XSSScanner:
                 }
                 simplified_surfaces.append(simplified)
             
-            # 批量写入(带自动去重)
+            # Batch write (with auto deduplication)
             self.writer.write_surfaces(simplified_surfaces)
             
         except Exception as e:
@@ -226,25 +226,25 @@ class XSSScanner:
                 await context.close()
     
     def _deduplicate_urls(self, urls: List[str], target_domain: str) -> List[str]:
-        """URL 去重
-        
-        基于 (domain, path, sorted_query_keys) 去重
+        """URL deduplication
+
+        Deduplicate based on (domain, path, sorted_query_keys)
         """
         seen = set()
         unique = []
         
         for url in urls:
-            # 基本验证
+            # Basic validation
             if not URLUtils.is_valid_http_url(url):
                 continue
             
-            # 范围过滤（只保留目标域及其子域）
+            # Scope filter (keep only target domain and its subdomains)
             url_domain = URLUtils.get_domain(url)
             target_dom = URLUtils.get_domain(target_domain)
             if not (url_domain == target_dom or url_domain.endswith(f".{target_dom}")):
                 continue
             
-            # 生成去重指纹
+            # Generate deduplication fingerprint
             normalized = URLUtils.normalize_url(url)
             from urllib.parse import urlparse, parse_qs
             parsed = urlparse(normalized)
@@ -259,32 +259,32 @@ class XSSScanner:
 
 
 async def main():
-    """主入口"""
+    """Main entry point"""
     import sys
     
     if len(sys.argv) < 2:
-        print("用法: python crawler.py <target_domain>")
-        print("示例: python crawler.py http://127.0.0.1:3000")
+        print("Usage: python crawler.py <target_domain>")
+        print("Example: python crawler.py http://127.0.0.1:3000")
         sys.exit(1)
     
     target = sys.argv[1]
     
-    # 创建扫描器
+    # Create scanner
     config = ScannerConfig(
         MAX_DEPTH=2,
         MAX_ACTIONS_PER_PAGE=50,
-        MAX_URLS=50,  # 限制 URL 数量避免过长时间
+        MAX_URLS=50,  # Limit URL count to avoid excessive duration
     )
     
     scanner = XSSScanner(config)
     
     try:
         result_file = await scanner.scan(target)
-        print(f"\n✓ 扫描完成！结果保存在: {result_file}")
+        print(f"\n✓ Scan completed! Results saved to: {result_file}")
     except KeyboardInterrupt:
-        print("\n✗ 用户中断扫描")
+        print("\n✗ Scan interrupted by user")
     except Exception as e:
-        print(f"\n✗ 扫描失败: {e}")
+        print(f"\n✗ Scan failed: {e}")
         sys.exit(1)
 
 

@@ -1,7 +1,7 @@
 """
-流量拦截器模块
+Traffic Interceptor Module
 
-监听并分析所有网络请求，提取参数
+Monitor and analyze all network requests, extract parameters
 """
 from typing import List, Dict, Any, Optional
 from playwright.async_api import Page, Request
@@ -17,33 +17,33 @@ from datetime import datetime
 
 
 class TrafficInterceptor:
-    """流量拦截器
-    
-    功能:
-    - 监听所有网络请求
-    - 解析 JSON Body
-    - 解析 FormData
-    - 提取 Header 参数
+    """Traffic Interceptor
+
+    Features:
+    - Monitor all network requests
+    - Parse JSON Body
+    - Parse FormData
+    - Extract Header parameters
     """
     
     def __init__(self, scope_domains: List[str], capture_all: bool = False, page_url: str = "", action_trigger: str = "page_load"):
-        """初始化流量拦截器
-        
+        """Initialize traffic interceptor
+
         Args:
-            scope_domains: 允许的域名范围列表
-            capture_all: 是否捕获所有域名的流量（无差别捕获模式）
-            page_url: 当前页面 URL（用于标记触发来源）
-            action_trigger: 触发动作描述（如 "page_load", "click_button_#id"）
-        
-        注意：depth_level 和 trigger_chain 设计为可动态修改的属性，
-        由 DeepInteractionEngine 在运行时更新
+            scope_domains: List of allowed domain scopes
+            capture_all: Whether to capture all domain traffic (indiscriminate capture mode)
+            page_url: Current page URL (for marking trigger source)
+            action_trigger: Trigger action description (e.g. "page_load", "click_button_#id")
+
+        Note: depth_level and trigger_chain are designed as dynamically modifiable properties,
+        updated by DeepInteractionEngine at runtime
         """
         self.scope_domains = scope_domains
         self.capture_all = capture_all
         self.page_url = page_url
         self.action_trigger = action_trigger
         
-        # 深度交互相关（可动态修改）
+        # Deep interaction related (dynamically modifiable)
         self.depth_level: int = 0
         self.trigger_chain: List[str] = ["page_load"]
         
@@ -51,33 +51,33 @@ class TrafficInterceptor:
         self._active = False
     
     async def start_interception(self, page: Page):
-        """启动流量拦截
-        
+        """Start traffic interception
+
         Args:
-            page: Playwright 页面对象
+            page: Playwright page object
         """
         self._active = True
         page.on("request", self._handle_request)
-        mode = "无差别捕获" if self.capture_all else f"范围: {self.scope_domains}"
-        logger.info(f"流量拦截已启动 ({mode})")
+        mode = "indiscriminate capture" if self.capture_all else f"scope: {self.scope_domains}"
+        logger.info(f"Traffic interception started ({mode})")
     
     def stop_interception(self):
-        """停止拦截"""
+        """Stop interception"""
         self._active = False
-        logger.info("流量拦截已停止")
+        logger.info("Traffic interception stopped")
 
     def _get_timestamp(self):
         return datetime.now().isoformat()
 
     
     def _is_cross_origin(self, request_url: str) -> bool:
-        """判断请求是否跨域
-        
+        """Determine if request is cross-origin
+
         Args:
-            request_url: 请求 URL
-            
+            request_url: Request URL
+
         Returns:
-            True 表示跨域，False 表示同域
+            True means cross-origin, False means same-origin
         """
         if not self.page_url:
             return False
@@ -86,7 +86,7 @@ class TrafficInterceptor:
         return URLUtils.get_domain(request_url) != URLUtils.get_domain(self.page_url)
     
     async def _handle_request(self, request: Request):
-        """处理拦截到的请求"""
+        """Handle intercepted request"""
         if not self._active:
             return
         
@@ -94,32 +94,32 @@ class TrafficInterceptor:
             url = request.url
             method = request.method
             
-            # 跨域判断
+            # Cross-origin check
             is_cross_origin = self._is_cross_origin(url)
             
-            # 过滤逻辑
+            # Filter logic
             if not self.capture_all:
-                # 非无差别模式：只处理范围内的请求
+                # Non-indiscriminate mode: only process requests within scope
                 if not URLUtils.is_in_scope(url, self.scope_domains):
                     return
-            # 无差别模式：捕获所有请求，无需过滤
+            # Indiscriminate mode: capture all requests, no filtering needed
             
-            # 过滤静态资源
+            # Filter static resources
             resource_type = request.resource_type
             if resource_type in ["image", "stylesheet", "font", "media"]:
-                # logger.debug(f"过滤静态资源: {url} ({resource_type})")
+                # logger.debug(f"Filtered static resource: {url} ({resource_type})")
                 return
             
-            # **DEBUG: 记录所有拦截的请求**
-            logger.debug(f"拦截请求: {method} {url} (crossorigin={is_cross_origin})")
+            # **DEBUG: Log all intercepted requests**
+            logger.debug(f"Intercepted request: {method} {url} (crossorigin={is_cross_origin})")
             
-            # 1. 分析 POST/PUT/PATCH/DELETE/OPTIONS
+            # 1. Analyze POST/PUT/PATCH/DELETE/OPTIONS
             if method.upper() in ["POST", "PUT", "PATCH", "DELETE", "OPTIONS"]:
-                post_data = request.post_data or ""  # 允许为空
+                post_data = request.post_data or ""  # Allow empty
                 
-                # 即使没有 Body，也记录请求（特别是 OPTIONS 和 DELETE）
+                # Record request even without body (especially OPTIONS and DELETE)
                 if method == "OPTIONS":
-                     # 记录 OPTIONS 请求作为跨域探测线索
+                     # Record OPTIONS request as cross-origin detection clue
                     self._captured_surfaces.append(AttackSurface(
                         url=url,
                         method=method,
@@ -135,16 +135,16 @@ class TrafficInterceptor:
                         sample_payload="Access-Control-Request-Method",
                     ))
                 else:
-                    # 处理数据请求
+                    # Handle data request
                     if post_data:
                         self._parse_post_data(url, method, post_data, request, is_cross_origin)
                     else:
-                        # 无 Body 的 POST/DELETE，记录 URL 本身
+                        # POST/DELETE without body, record URL itself
                         self._captured_surfaces.append(AttackSurface(
                             url=url,
                             method=method,
-                            param_name="body", # 标记为空 body
-                            param_type=ParamType.JSON_BODY, # 假设
+                            param_name="body", # Mark as empty body
+                            param_type=ParamType.JSON_BODY, # Assume
                             source=SourceType.TRAFFIC_INTERCEPT,
                             page_url=self.page_url,
                             action_trigger=self.action_trigger,
@@ -155,9 +155,9 @@ class TrafficInterceptor:
                             sample_payload="",
                         ))
             
-            # **BUG FIX: 添加 GET 请求参数捕获**
+            # **BUG FIX: Add GET request parameter capture**
             elif method.upper() == "GET":
-                # 1. 解析 URL 查询参数
+                # 1. Parse URL query parameters
                 from urllib.parse import urlparse, parse_qs, unquote
                 parsed = urlparse(url)
                 if parsed.query:
@@ -178,21 +178,21 @@ class TrafficInterceptor:
                                 trigger_chain=" -> ".join(self.trigger_chain),
                                 sample_payload=param_value,
                             ))
-                    logger.debug(f"GET 请求参数: {url} ({len(params)} 个参数)")
+                    logger.debug(f"GET request parameters: {url} ({len(params)} parameters)")
                 
-                # 2. 检测 RESTful 路径参数 (检查路径中是否包含测试 Payload)
-                # 我们在 DeepInteractionEngine 中使用的测试 Payload 是 "XSS_SEARCH_TEST"
+                # 2. Detect RESTful path parameters (check if path contains test payload)
+                # The test payload used in DeepInteractionEngine is "XSS_SEARCH_TEST"
                 path = unquote(parsed.path)
                 if "XSS_SEARCH_TEST" in path:
-                    # 提取包含 Payload 的路径段作为参数
+                    # Extract path segments containing payload as parameters
                     segments = path.strip('/').split('/')
                     for i, segment in enumerate(segments):
                         if "XSS_SEARCH_TEST" in segment:
                             self._captured_surfaces.append(AttackSurface(
                                 url=url,
                                 method=method,
-                                param_name=f"path_param_{i}", # 使用位置作为参数名
-                                param_type=ParamType.QUERY_PARAM, # 暂时归类为 QUERY_PARAM 或新增 PATH_PARAM
+                                param_name=f"path_param_{i}", # Use position as parameter name
+                                param_type=ParamType.QUERY_PARAM, # Temporarily classified as QUERY_PARAM or new PATH_PARAM
                                 source=SourceType.TRAFFIC_INTERCEPT,
                                 page_url=self.page_url,
                                 action_trigger=self.action_trigger,
@@ -202,27 +202,27 @@ class TrafficInterceptor:
                                 trigger_chain=" -> ".join(self.trigger_chain),
                                 sample_payload=segment,
                             ))
-                            logger.info(f"捕获 RESTful 路径参数: {url} (Segment {i})")
+                            logger.info(f"Captured RESTful path parameter: {url} (Segment {i})")
             
-            # 2. 分析 Query 参数（由 URL 分析器处理，这里跳过）
-            
-            # 3. 可选：分析 Headers
+            # 2. Analyze Query parameters (handled by URL analyzer, skipped here)
+
+            # 3. Optional: analyze Headers
             # self._parse_headers(url, method, request.headers)
             
         except Exception as e:
-            logger.debug(f"请求处理失败: {url} - {e}")
+            logger.debug(f"Request handling failed: {url} - {e}")
     
     def _parse_post_data(self, url: str, method: str, post_data: str, request: Request, is_cross_origin: bool = False):
-        """解析 POST 数据"""
+        """Parse POST data"""
         content_type = request.headers.get("content-type", "")
         
-        logger.debug(f"解析POST数据: {url}, content-type={content_type}, body长度={len(post_data)}")
+        logger.debug(f"Parse POST data: {url}, content-type={content_type}, body length={len(post_data)}")
         
-        # JSON 格式
+        # JSON format
         if "application/json" in content_type:
             self._parse_json_body(url, method, post_data, is_cross_origin)
         
-        # 表单格式
+        # Form format
         elif "application/x-www-form-urlencoded" in content_type:
             self._parse_form_data(url, method, post_data, is_cross_origin)
         
@@ -231,21 +231,21 @@ class TrafficInterceptor:
             self._parse_multipart_data(url, method, post_data, is_cross_origin)
     
     def _parse_json_body(self, url: str, method: str, json_str: str, is_cross_origin: bool = False):
-        """递归解析 JSON Body"""
+        """Recursively parse JSON Body"""
         try:
             if not json_str:
                 return
 
             data = json.loads(json_str)
-            # 提取所有层级的键作为参数名
+            # Extract all level keys as parameter names
             param_names = self._extract_json_keys(data)
             
-            # 添加时间戳
+            # Add timestamp
             from datetime import datetime
             timestamp = datetime.now().isoformat()
             
             if not param_names:
-                logger.debug(f"JSON Body 中未发现参数: {url}")
+                logger.debug(f"No parameters found in JSON Body: {url}")
                 return
 
             for param_name in param_names:
@@ -256,30 +256,30 @@ class TrafficInterceptor:
                     param_type=ParamType.JSON_BODY,
                     source=SourceType.TRAFFIC_INTERCEPT,
                     raw_request=json_str[:500],
-                    # 混合式扫描器字段
+                    # Hybrid scanner fields
                     page_url=self.page_url,
                     action_trigger=self.action_trigger,
                     is_cross_origin=is_cross_origin,
                     timestamp=timestamp,
-                    # 深度交互字段
+                    # Deep interaction fields
                     depth_level=self.depth_level,
                     trigger_chain=" -> ".join(self.trigger_chain),
                     sample_payload="XSS_Probe",
                 ))
-            logger.debug(f"捕获 JSON 参数: {url} -> {param_names}")
+            logger.debug(f"Captured JSON parameters: {url} -> {param_names}")
                 
         except json.JSONDecodeError:
-            logger.debug(f"JSON 解析失败: {json_str[:100]}")
+            logger.debug(f"JSON parse failed: {json_str[:100]}")
         except Exception as e:
-            logger.debug(f"JSON 处理异常: {e}")
+            logger.debug(f"JSON processing error: {e}")
 
     def _parse_form_data(self, url: str, method: str, post_data: str, is_cross_origin: bool = False):
-        """解析 Form Data"""
+        """Parse Form Data"""
         try:
             from urllib.parse import parse_qs
             params = parse_qs(post_data)
             
-            # 添加时间戳
+            # Add timestamp
             from datetime import datetime
             timestamp = datetime.now().isoformat()
             
@@ -291,30 +291,30 @@ class TrafficInterceptor:
                     param_type=ParamType.POST_PARAM,
                     source=SourceType.TRAFFIC_INTERCEPT,
                     raw_request=post_data[:500],
-                    # 混合式扫描器字段
+                    # Hybrid scanner fields
                     page_url=self.page_url,
                     action_trigger=self.action_trigger,
                     is_cross_origin=is_cross_origin,
                     timestamp=timestamp,
-                    # 深度交互字段
+                    # Deep interaction fields
                     depth_level=self.depth_level,
                     trigger_chain=" -> ".join(self.trigger_chain),
                     sample_payload="XSS_Probe",
                 ))
-            logger.debug(f"捕获 Form 参数: {url} -> {list(params.keys())}")
+            logger.debug(f"Captured Form parameters: {url} -> {list(params.keys())}")
             
         except Exception as e:
-            logger.debug(f"Form Data 解析失败: {e}")
+            logger.debug(f"Form Data parsing failed: {e}")
     
     def _extract_json_keys(self, data: Any, prefix: str = "") -> List[str]:
-        """递归提取 JSON 中所有键
-        
+        """Recursively extract all keys from JSON
+
         Args:
-            data: JSON 数据
-            prefix: 键前缀（用于嵌套对象）
-            
+            data: JSON data
+            prefix: Key prefix (for nested objects)
+
         Returns:
-            键名列表
+            List of key names
         """
         keys = []
         
@@ -323,19 +323,19 @@ class TrafficInterceptor:
                 full_key = f"{prefix}.{key}" if prefix else key
                 keys.append(full_key)
                 
-                # 递归处理嵌套对象/数组
+                # Recursively process nested objects/arrays
                 if isinstance(value, (dict, list)):
                     keys.extend(self._extract_json_keys(value, full_key))
         
         elif isinstance(data, list):
-            # 仅处理第一个元素作为样本
+            # Only process the first element as sample
             if data and isinstance(data[0], (dict, list)):
                 keys.extend(self._extract_json_keys(data[0], prefix))
         
         return keys
     
     def _parse_form_data(self, url: str, method: str, form_data: str, is_cross_origin: bool = False):
-        """解析 application/x-www-form-urlencoded"""
+        """Parse application/x-www-form-urlencoded"""
         try:
             from urllib.parse import parse_qs
             from datetime import datetime
@@ -359,10 +359,10 @@ class TrafficInterceptor:
                 ))
                 
         except Exception as e:
-            logger.debug(f"表单数据解析失败: {e}")
+            logger.debug(f"Form data parsing failed: {e}")
     
     def _parse_multipart_data(self, url: str, method: str, multipart_data: str, is_cross_origin: bool = False):
-        """解析 multipart/form-data（简化处理）"""
+        """Parse multipart/form-data (simplified)"""
         try:
             import re
             from datetime import datetime
@@ -386,12 +386,12 @@ class TrafficInterceptor:
                 ))
                 
         except Exception as e:
-            logger.debug(f"Multipart 数据解析失败: {e}")
+            logger.debug(f"Multipart data parsing failed: {e}")
     
     def get_captured_surfaces(self) -> List[AttackSurface]:
-        """获取已捕获的攻击面"""
+        """Get captured attack surfaces"""
         return self._captured_surfaces.copy()
     
     def clear(self):
-        """清空捕获的数据"""
+        """Clear captured data"""
         self._captured_surfaces.clear()

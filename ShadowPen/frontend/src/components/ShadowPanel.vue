@@ -1,4 +1,4 @@
-<!-- Shadow面板组件 -->
+<!-- Shadow Panel Component -->
 <template>
   <div class="shadow-panel">
     <div class="shadow-header">
@@ -6,7 +6,7 @@
       <div class="pulse-dot"></div>
     </div>
 
-    <!-- 当前活动 -->
+    <!-- Current Activity -->
     <div v-if="currentActivity" class="live-activity">
       <div class="activity-header">
         <span class="activity-label">⚡ Live Testing</span>
@@ -23,7 +23,7 @@
       </div>
     </div>
 
-    <!-- AI发现列表 -->
+    <!-- AI Findings List -->
     <div class="notifications">
       <el-empty 
         v-if="notifications.length === 0" 
@@ -67,16 +67,16 @@ let ws = null
 // ApplyPayload
 const applyPayload = (payload) => {
   emit('apply-payload', payload)
-  ElMessage.info('Payload已Apply到测试区')
+  ElMessage.info('Payload applied to testing area')
 }
 
-// 截断字符串
+// Truncate string
 const truncate = (str, len) => {
   if (!str || str.length <= len) return str
   return str.substring(0, len) + '...'
 }
 
-// 连接WebSocket
+// Connect WebSocket
 onMounted(() => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   ws = new WebSocket(`${protocol}//${window.location.host}/ws/notifications`)
@@ -229,7 +229,7 @@ onUnmounted(() => {
   margin: 0;
 }
 
-/* 列表过渡 */
+/* List transition */
 .list-enter-active,
 .list-leave-active {
   transition: all 0.5s ease;

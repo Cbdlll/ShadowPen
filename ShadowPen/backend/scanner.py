@@ -1,7 +1,7 @@
 """
-XSS Payload 验证器
+XSS Payload Validator
 
-用于验证 XSS Payload 是否有效
+Used to verify whether an XSS payload is effective
 """
 import asyncio
 from typing import Dict, Any
@@ -11,14 +11,14 @@ from playwright.async_api import async_playwright
 
 async def verify_payload(target_url: str, payload: str) -> Dict[str, Any]:
     """
-    验证 XSS Payload 是否有效
-    
+    Verify whether an XSS payload is effective
+
     Args:
-        target_url: 目标 URL
+        target_url: Target URL
         payload: XSS Payload
-        
+
     Returns:
-        验证结果字典
+        Verification result dictionary
     """
     try:
         async with async_playwright() as p:
@@ -26,7 +26,7 @@ async def verify_payload(target_url: str, payload: str) -> Dict[str, Any]:
             context = await browser.new_context()
             page = await context.new_page()
             
-            # 检测 alert 弹窗
+            # Detect alert dialogs
             alert_triggered = False
             
             def handle_dialog(dialog):
@@ -37,31 +37,31 @@ async def verify_payload(target_url: str, payload: str) -> Dict[str, Any]:
             page.on("dialog", handle_dialog)
             
             try:
-                # 尝试注入 payload
+                # Try to inject payload
                 test_url = f"{target_url}?test={payload}"
                 await page.goto(test_url, timeout=10000, wait_until="networkidle")
                 
-                # 等待一下，看是否触发
+                # Wait to see if it triggers
                 await asyncio.sleep(1)
                 
                 if alert_triggered:
                     return {
                         "success": True,
-                        "message": f"XSS 漏洞确认！Payload: {payload}",
+                        "message": f"XSS vulnerability confirmed! Payload: {payload}",
                         "payload": payload,
                         "url": test_url
                     }
                 else:
                     return {
                         "success": False,
-                        "message": f"Payload 未触发 XSS",
+                        "message": f"Payload did not trigger XSS",
                         "payload": payload
                     }
                     
             except Exception as e:
                 return {
                     "success": False,
-                    "message": f"验证失败: {str(e)}",
+                    "message": f"Verification failed: {str(e)}",
                     "payload": payload
                 }
             finally:
@@ -70,6 +70,6 @@ async def verify_payload(target_url: str, payload: str) -> Dict[str, Any]:
     except Exception as e:
         return {
             "success": False,
-            "message": f"浏览器启动失败: {str(e)}",
+            "message": f"Browser launch failed: {str(e)}",
             "payload": payload
         }

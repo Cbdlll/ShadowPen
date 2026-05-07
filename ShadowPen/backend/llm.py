@@ -5,23 +5,23 @@ from typing import List
 from pathlib import Path
 from dotenv import load_dotenv
 
-# 加载 .env 文件（从父目录）
+# Load .env file (from parent directory)
 env_path = Path(__file__).parent.parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
-# 强制检查环境变量
+# Force check environment variables
 BASE_URL = os.getenv("BASE_URL")
 API_KEY = os.getenv("API_KEY")
 MODEL = os.getenv("MODEL")
 
 if not all([BASE_URL, API_KEY, MODEL]):
-    # 在导入时即警告，但在运行时报错，避免阻断应用启动（允许仅运行主循环）
+    # Warn at import time, but fail at runtime to avoid blocking app startup (allows running main loop only)
     print("Warning: LLM environment variables (BASE_URL, API_KEY, MODEL) not set. Shadow mode will fail.")
 
 async def generate_mutations(user_payload: str) -> List[str]:
     """
-    调用 LLM 生成变异 Payload。
-    严禁 Mock，必须使用真实 API。
+    Call LLM to generate mutated payloads.
+    Mocking is strictly forbidden; must use real API.
     """
     if not all([BASE_URL, API_KEY, MODEL]):
         print("Error: Missing LLM environment variables.")
@@ -51,8 +51,8 @@ async def generate_mutations(user_payload: str) -> List[str]:
             result = response.json()
             content = result['choices'][0]['message']['content'].strip()
             
-            # 尝试解析 JSON
-            # 有时候 LLM 会包裹在 ```json ... ``` 中，需要清理
+            # Try to parse JSON
+            # Sometimes LLM wraps response in ```json ... ```, need to clean up
             if content.startswith("```json"):
                 content = content[7:]
             if content.endswith("```"):

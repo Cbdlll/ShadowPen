@@ -1,7 +1,7 @@
 """
-JavaScript Hook 注入器
+JavaScript Hook Injector
 
-运行时拦截危险函数调用,发现基于 JS 的 XSS 漏洞
+Intercept dangerous function calls at runtime to discover JS-based XSS vulnerabilities
 """
 from typing import List, Dict, Any
 from playwright.async_api import Page
@@ -12,10 +12,10 @@ import re
 logger = logging.getLogger(__name__)
 
 
-# Hook 注入脚本
+# Hook injection script
 HOOK_SCRIPT = """
 (function() {
-    // 保存原始函数
+    // Save original functions
     const original = {
         eval: window.eval,
         setTimeout: window.setTimeout,
@@ -24,7 +24,7 @@ HOOK_SCRIPT = """
         Function: window.Function
     };
     
-    // 结果存储
+    // Result storage
     window.__xss_hook_results = [];
     
     // Hook eval
@@ -38,7 +38,7 @@ HOOK_SCRIPT = """
         return original.eval.apply(this, arguments);
     };
     
-    // Hook setTimeout (仅字符串形式)
+    // Hook setTimeout (string form only)
     window.setTimeout = function(code, delay) {
         if (typeof code === 'string') {
             window.__xss_hook_results.push({
@@ -51,7 +51,7 @@ HOOK_SCRIPT = """
         return original.setTimeout.apply(this, arguments);
     };
     
-    // Hook setInterval (仅字符串形式)
+    // Hook setInterval (string form only)
     window.setInterval = function(code, delay) {
         if (typeof code === 'string') {
             window.__xss_hook_results.push({
@@ -74,7 +74,7 @@ HOOK_SCRIPT = """
         return original.documentWrite.apply(this, arguments);
     };
     
-    // Hook Function 构造函数
+    // Hook Function constructor
     window.Function = function() {
         const args = Array.from(arguments);
         window.__xss_hook_results.push({
@@ -85,13 +85,13 @@ HOOK_SCRIPT = """
         return original.Function.apply(this, arguments);
     };
     
-    // Hook 动态 script 创建
+    // Hook dynamic script creation
     const originalCreateElement = document.createElement;
     document.createElement = function(tagName) {
         const element = originalCreateElement.apply(this, arguments);
         
         if (tagName && tagName.toLowerCase() === 'script') {
-            // Hook src 属性
+            // Hook src property
             const originalSrcDescriptor = Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype, 'src');
             if (originalSrcDescriptor && originalSrcDescriptor.set) {
                 Object.defineProperty(element, 'src', {
@@ -107,7 +107,7 @@ HOOK_SCRIPT = """
                 });
             }
             
-            // Hook textContent 属性
+            // Hook textContent property
             const originalTextContentDescriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
             if (originalTextContentDescriptor && originalTextContentDescriptor.set) {
                 Object.defineProperty(element, 'textContent', {
@@ -129,78 +129,78 @@ HOOK_SCRIPT = """
         return element;
     };
     
-    console.log('[XSS Hook] JavaScript Hook 已注入');
+    console.log('[XSS Hook] JavaScript Hook injected');
 })();
 """
 
 
 class JSHookInjector:
-    """JavaScript Hook 注入器
-    
-    功能:
-    - 在页面加载前注入 Hook 脚本
-    - 拦截 eval, setTimeout, setInterval, document.write, Function
-    - 拦截动态 script 标签创建
-    - 提取参数引用,识别 XSS 风险
+    """JavaScript Hook Injector
+
+    Features:
+    - Inject Hook script before page load
+    - Intercept eval, setTimeout, setInterval, document.write, Function
+    - Intercept dynamic script tag creation
+    - Extract parameter references, identify XSS risks
     """
     
     async def inject_hooks(self, page: Page):
-        """在页面加载前注入 Hook
-        
+        """Inject Hook before page load
+
         Args:
-            page: Playwright 页面对象
+            page: Playwright page object
         """
         try:
             await page.add_init_script(HOOK_SCRIPT)
-            logger.debug("JS Hook 脚本已注入")
+            logger.debug("JS Hook script injected")
         except Exception as e:
-            logger.error(f"Hook 注入失败: {e}")
+            logger.error(f"Hook injection failed: {e}")
     
     async def collect_results(self, page: Page, current_url: str) -> List[AttackSurface]:
-        """收集 Hook 结果并转换为攻击面
-        
+        """Collect Hook results and convert to attack surfaces
+
         Args:
-            page: Playwright 页面对象
-            current_url: 当前页面 URL
-            
+            page: Playwright page object
+            current_url: Current page URL
+
         Returns:
-            攻击面列表
+            List of attack surfaces
         """
         surfaces = []
         
         try:
-            # 获取 Hook 结果
+            # Get Hook results
             results = await page.evaluate("() => window.__xss_hook_results || []")
             
             if not results:
-                logger.debug("未捕获到危险函数调用")
+                logger.debug("No dangerous function calls captured")
                 return surfaces
             
-            logger.info(f"捕获到 {len(results)} 次危险函数调用")
+            logger.info(f"Captured {len(results)} dangerous function calls")
             
-            # 处理每个结果
+            # Process each result
             for result in results:
                 func_name = result.get('function', 'unknown')
                 argument = result.get('argument', '')
                 
-                # 提取参数引用
+                # Extract parameter references
                 params = self._extract_params_from_code(argument)
                 
                 if params:
-                    # 发现参数引用,创建攻击面
+                    # Found parameter references, creating attack surfaces
                     for param in params:
                         surfaces.append(AttackSurface(
                             url=current_url,
-                            method="GET",  # 通常是客户端处理
+                            method="GET",  # Usually client-side processing
                             param_name=param,
                             param_type=ParamType.JS_DYNAMIC,
                             source=SourceType.JS_STATIC_ANALYSIS,
                             dangerous_function=func_name,
-                            sample_payload=argument[:200],  # 截断以避免过长
+                            sample_payload=argument[:200],  # Truncate to avoid being too long
                             element_type=func_name
                         ))
                 else:
-                    # 即使没有参数引用,也记录危险函数调用
+                    # Record dangerous function call even without parameter references
                     surfaces.append(AttackSurface(
                         url=current_url,
                         method="GET",
@@ -212,57 +212,57 @@ class JSHookInjector:
                         element_type=func_name
                     ))
             
-            logger.info(f"JS Hook 分析完成,发现 {len(surfaces)} 个攻击面")
+            logger.info(f"JS Hook analysis completed, found {len(surfaces)} attack surfaces")
             
         except Exception as e:
-            logger.error(f"Hook 结果收集失败: {e}")
+            logger.error(f"Hook result collection failed: {e}")
         
         return surfaces
     
     def _extract_params_from_code(self, code: str) -> List[str]:
-        """从 JS 代码中提取 URL 参数引用
-        
+        """Extract URL parameter references from JS code
+
         Args:
-            code: JavaScript 代码字符串
-            
+            code: JavaScript code string
+
         Returns:
-            参数名列表
+            List of parameter names
         """
         params = set()
         
-        # 模式 1: URLSearchParams.get('param')
+        # Pattern 1: URLSearchParams.get('param')
         pattern1 = r"\.get\(['\"](\w+)['\"]\)"
         params.update(re.findall(pattern1, code))
         
-        # 模式 2: params.param 或 query.param
+        # Pattern 2: params.param or query.param
         pattern2 = r"(?:params|query|search)\.(\w+)"
         params.update(re.findall(pattern2, code))
         
-        # 模式 3: query['param'] 或 query["param"]
+        # Pattern 3: query['param'] or query["param"]
         pattern3 = r"(?:params|query|search)\[['\"](\w+)['\"]\]"
         params.update(re.findall(pattern3, code))
         
-        # 模式 4: location.search (通用)
+        # Pattern 4: location.search (generic)
         if 'location.search' in code or 'window.location.search' in code:
             params.add('_url_search_')
         
-        # 模式 5: location.hash
+        # Pattern 5: location.hash
         if 'location.hash' in code or 'window.location.hash' in code:
             params.add('_url_hash_')
         
-        # 模式 6: document.URL
+        # Pattern 6: document.URL
         if 'document.URL' in code or 'document.url' in code:
             params.add('_document_url_')
         
         return list(params)
     
     async def clear_results(self, page: Page):
-        """清空 Hook 结果
-        
+        """Clear Hook results
+
         Args:
-            page: Playwright 页面对象
+            page: Playwright page object
         """
         try:
             await page.evaluate("() => { window.__xss_hook_results = []; }")
         except Exception as e:
-            logger.debug(f"清空 Hook 结果失败: {e}")
+            logger.debug(f"Failed to clear Hook results: {e}")

@@ -1,4 +1,4 @@
-<!-- 步骤3：注入点选择（LLM智能分析版） -->
+<!-- Step 3: Injection Point Selection (LLM Analysis) -->
 <template>
   <div class="injection-points-step">
     <div class="step-content">
@@ -16,7 +16,7 @@
           </p>
         </div>
         
-        <!-- 筛选和排序 -->
+        <!-- Filters -->
         <div class="filters">
           <el-select v-model="filterPriority" placeholder="Priority" size="default" style="width: 140px">
             <el-option label="All Priorities" value="all" />
@@ -33,7 +33,7 @@
         </div>
       </div>
 
-      <!-- 分析摘要 -->
+      <!-- Analysis Summary -->
       <el-alert 
         v-if="hasAnalysis && analysis.summary" 
         :title="analysis.summary"
@@ -43,7 +43,7 @@
         class="analysis-summary"
       />
 
-      <!-- 高价值攻击面卡片 -->
+      <!-- High-value attack surface cards -->
       <div class="injection-points-grid" v-if="filteredSurfaces.length > 0">
         <el-card 
           v-for="(surface, index) in filteredSurfaces" 
@@ -57,7 +57,7 @@
           shadow="hover"
           @click="selectSurface(surface)"
         >
-          <!-- 卡片头部 -->
+          <!-- Card header -->
           <template #header>
             <div class="card-header">
               <div class="header-left">
@@ -94,7 +94,7 @@
             <span>{{ truncateUrl(surface.url, 60) }}</span>
           </div>
 
-          <!-- 参数信息 -->
+          <!-- Parameter info -->
           <div class="card-param">
             <el-icon><Edit /></el-icon>
             <strong>{{ surface.param_name }}</strong>
@@ -138,7 +138,7 @@
             <span>{{ surface.test_tips }}</span>
           </div>
 
-          <!-- 选中指示 -->
+          <!-- Selected indicator -->
           <div v-if="selectedSurface?.index === surface.index" class="selected-indicator">
             <el-icon><CircleCheck /></el-icon>
             <span>Selected</span>
@@ -146,7 +146,7 @@
         </el-card>
       </div>
 
-      <!-- 空状态 -->
+      <!-- Empty state -->
       <el-empty 
         v-else
         description="No matching attack surfaces found"
@@ -155,7 +155,7 @@
         <el-button type="primary" @click="resetFilters">Reset Filters</el-button>
       </el-empty>
 
-      <!-- 被过滤掉的攻击面（可折叠） -->
+      <!-- Filtered-out attack surfaces (collapsible) -->
       <el-collapse v-if="hasAnalysis && filteredOutSurfaces.length > 0" class="filtered-section">
         <el-collapse-item>
           <template #title>
@@ -178,7 +178,7 @@
       </el-collapse>
     </div>
 
-    <!-- 操作栏 -->
+    <!-- Action Bar -->
     <div class="step-actions">
       <el-button size="large" @click="$emit('prev')">← Re-crawl</el-button>
       <el-button 
@@ -209,12 +209,12 @@ const props = defineProps({
 
 const emit = defineEmits(['next', 'prev'])
 
-// 状态
+// State
 const selectedSurface = ref(null)
 const filterPriority = ref('all')
 const filterMethod = ref('all')
 
-// 解析爬取结果
+// Parse crawl results
 const hasAnalysis = computed(() => {
   return props.crawlResult?.analysis?.high_value_surfaces
 })
@@ -231,10 +231,10 @@ const totalSurfaces = computed(() => {
   return allSurfaces.value.length
 })
 
-// 分析后的攻击面（包含所有优先级）
+// Analyzed attack surfaces (all priorities)
 const analyzedSurfaces = computed(() => {
   if (!hasAnalysis.value) {
-    // 如果没有 LLM 分析，显示所有攻击面
+    // If no LLM analysis, show all attack surfaces
     return allSurfaces.value.map((surface, index) => ({
       index,
       ...surface,
@@ -243,32 +243,32 @@ const analyzedSurfaces = computed(() => {
     }))
   }
   
-  // 使用 LLM 分析结果（显示所有优先级）
+  // Use LLM analysis results (show all priorities)
   return (analysis.value.high_value_surfaces || []).map(surface => ({
     ...surface,
-    // 补充原始数据
+    // Supplement with raw data
     ...allSurfaces.value[surface.index]
   }))
 })
 
-// 保持兼容性
+// Maintain compatibility
 const highValueSurfaces = analyzedSurfaces
 
-// 被过滤的攻击面
+// Filtered-out attack surfaces
 const filteredOutSurfaces = computed(() => {
   return analysis.value.filtered_out || []
 })
 
-// 筛选后的攻击面
+// Filtered attack surfaces
 const filteredSurfaces = computed(() => {
   let surfaces = [...analyzedSurfaces.value]
   
-  // 按优先级筛选
+  // Filter by priority
   if (filterPriority.value !== 'all') {
     surfaces = surfaces.filter(s => s.priority === filterPriority.value)
   }
   
-  // 按方法筛选
+  // Filter by method
   if (filterMethod.value !== 'all') {
     surfaces = surfaces.filter(s => s.method === filterMethod.value)
   }
@@ -276,23 +276,23 @@ const filteredSurfaces = computed(() => {
   return surfaces
 })
 
-// 选择攻击面
+// Select attack surface
 const selectSurface = (surface) => {
   selectedSurface.value = surface
   ElMessage.success(`Selected: ${surface.method} ${surface.param_name}`)
 }
 
-// 下一步
+// Next step
 const handleNext = () => {
   if (!selectedSurface.value) {
     ElMessage.warning('Please select an attack surface first')
     return
   }
   
-  // 从原始 surface 数据获取完整信息
+  // Get full info from raw surface data
   const originalSurface = allSurfaces.value[selectedSurface.value.index] || selectedSurface.value
   
-  // 构造测试目标，添加 injection_points
+  // Construct test target with injection_points
   const testTarget = {
     url: selectedSurface.value.url || originalSurface.request_url,
     method: selectedSurface.value.method,
@@ -303,7 +303,7 @@ const handleNext = () => {
     resource_type: originalSurface.param_location || 'unknown',
     headers: originalSurface.headers || {},
     post_data: originalSurface.post_data || {},
-    // 构建 injection_points 数组供 Step4 使用
+    // Build injection_points array for Step4
     injection_points: [
       {
         name: selectedSurface.value.param_name,
@@ -322,7 +322,7 @@ const resetFilters = () => {
   filterMethod.value = 'all'
 }
 
-// 辅助函数
+// Helper functions
 const getMethodColor = (method) => {
   const colors = {
     'GET': '',
@@ -348,7 +348,7 @@ const getPriorityLabel = (priority) => {
     'medium': 'Medium Priority',
     'low': 'Low Priority'
   }
-  return labels[priority] || '未知'
+  return labels[priority] || 'Unknown'
 }
 
 const getScoreClass = (score) => {

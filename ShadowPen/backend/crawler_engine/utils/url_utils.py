@@ -1,18 +1,18 @@
 """
-工具模块：URL 处理工具
+Utils module: URL Processing Utilities
 
-提供 URL 解析、规范化、域名判断等功能
+Provides URL parsing, normalization, domain checking, and other functions
 """
 from urllib.parse import urlparse, urljoin, parse_qs
 from typing import Optional, List
 
 
 class URLUtils:
-    """URL 工具类"""
+    """URL utility class"""
     
     @staticmethod
     def normalize_url(url: str) -> str:
-        """规范化 URL，移除 Fragment"""
+        """Normalize URL, remove fragment"""
         parsed = urlparse(url)
         return f"{parsed.scheme}://{parsed.netloc}{parsed.path}" + (
             f"?{parsed.query}" if parsed.query else ""
@@ -20,24 +20,24 @@ class URLUtils:
     
     @staticmethod
     def get_domain(url: str) -> str:
-        """提取域名（主机名，不含端口）"""
+        """Extract domain (hostname without port)"""
         parsed = urlparse(url)
-        # 分离主机名和端口
+        # Separate hostname and port
         hostname = parsed.hostname or parsed.netloc.split(':')[0]
         return hostname
     
     @staticmethod
     def is_same_domain(url1: str, url2: str) -> bool:
-        """判断两个 URL 是否同域"""
+        """Check whether two URLs belong to the same domain"""
         return URLUtils.get_domain(url1) == URLUtils.get_domain(url2)
     
     @staticmethod
     def is_in_scope(url: str, scope_domains: str | List[str]) -> bool:
-        """判断 URL 是否在爬取范围内
-        
+        """Check whether a URL is within the crawling scope
+
         Args:
-            url: 待检查的 URL
-            scope_domains: 允许的域名范围（单个字符串或字符串列表）
+            url: URL to check
+            scope_domains: Allowed domain scope (single string or list of strings)
         """
         if not scope_domains:
             return True
@@ -48,14 +48,14 @@ class URLUtils:
         url_domain = URLUtils.get_domain(url)
         
         for scope in scope_domains:
-            # 处理 scope 包含端口的情况
+            # Handle scope containing port
             scope_hostname = scope.split(':')[0] if ':' in scope else scope
             
-            # 检查是否匹配（完全匹配或子域名）
+            # Check for match (exact match or subdomain)
             if url_domain == scope_hostname or url_domain.endswith(f".{scope_hostname}"):
                 return True
                 
-        # 特殊处理 localhost 和 127.0.0.1 的互通
+        # Special handling for localhost and 127.0.0.1 interchangeability
         if url_domain in ['localhost', '127.0.0.1']:
             for scope in scope_domains:
                 scope_hostname = scope.split(':')[0] if ':' in scope else scope
@@ -65,20 +65,20 @@ class URLUtils:
         return False    
     @staticmethod
     def resolve_relative_url(base_url: str, relative_url: str) -> str:
-        """将相对 URL 转换为绝对 URL"""
+        """Convert a relative URL to an absolute URL"""
         return urljoin(base_url, relative_url)
     
     @staticmethod
     def extract_query_params(url: str) -> dict:
-        """提取 URL 查询参数"""
+        """Extract URL query parameters"""
         parsed = urlparse(url)
         params = parse_qs(parsed.query)
-        # 将列表值转换为单值（取第一个）
+        # Convert list values to single value (take the first one)
         return {k: v[0] if len(v) == 1 else v for k, v in params.items()}
     
     @staticmethod
     def is_valid_http_url(url: str) -> bool:
-        """判断是否为有效的 HTTP(S) URL"""
+        """Check whether it is a valid HTTP(S) URL"""
         try:
             parsed = urlparse(url)
             return parsed.scheme in ("http", "https") and bool(parsed.netloc)

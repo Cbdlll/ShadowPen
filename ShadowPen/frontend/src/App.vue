@@ -1,6 +1,6 @@
 <template>
   <div class="xss-scanner-app">
-    <!-- 顶部Header -->
+    <!-- Top Header -->
     <el-header class="app-header">
       <div class="header-left">
         <h1>🛡️ ShadowPen</h1>
@@ -13,14 +13,14 @@
       </div>
     </el-header>
 
-    <!-- 主容器 -->
+    <!-- Main Container -->
     <el-container class="main-container">
-      <!-- 左侧：主工作区 -->
+      <!-- Left: Main Workspace -->
       <el-main class="work-area">
-        <!-- 步骤指示器 -->
+        <!-- Step Indicator -->
         <StepIndicator :current-step="currentStep" />
 
-        <!-- 步骤内容区（动态切换）-->
+        <!-- Step Content Area (Dynamic Switch) -->
         <transition name="fade" mode="out-in">
           <component 
             :is="currentStepComponent" 
@@ -33,13 +33,13 @@
         </transition>
       </el-main>
 
-      <!-- 右侧：Shadow面板 -->
+      <!-- Right: Shadow Panel -->
       <el-aside width="400px" class="shadow-aside">
         <ShadowPanel @apply-payload="handleApplyPayload" />
       </el-aside>
     </el-container>
 
-    <!-- Chat悬浮按钮 -->
+    <!-- Chat Floating Button -->
     <el-badge :value="unreadChatCount" :hidden="unreadChatCount === 0" class="chat-badge">
       <el-button 
         class="chat-fab"
@@ -52,15 +52,15 @@
       </el-button>
     </el-badge>
 
-    <!-- Chat抽屉 -->
+    <!-- Chat Drawer -->
     <ChatDrawer v-model="chatDrawerVisible" />
 
-    <!-- 日志悬浮按钮 -->
+    <!-- Log Floating Button -->
     <el-button class="log-fab" circle @click="logDrawerVisible = true">
       <el-icon :size="20"><Document /></el-icon>
     </el-button>
 
-    <!-- 日志抽屉 -->
+    <!-- Log Drawer -->
     <el-drawer v-model="logDrawerVisible" title="System Logs" size="50%" direction="rtl">
       <template #header>
         <div class="drawer-header">
@@ -89,7 +89,7 @@ import { ChatDotRound, Document } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
 
-// 导入组件
+// Import components
 import StepIndicator from './components/StepIndicator.vue'
 import Step1_UrlInput from './components/Step1_UrlInput.vue'
 import Step2_Crawling from './components/Step2_Crawling.vue'
@@ -98,7 +98,7 @@ import Step4_Testing from './components/Step4_Testing.vue'
 import ChatDrawer from './components/ChatDrawer.vue'
 import ShadowPanel from './components/ShadowPanel.vue'
 
-// 工作流状态
+// Workflow state
 const currentStep = ref(1)
 const workflow = ref({
   targetUrl: '',
@@ -108,7 +108,7 @@ const workflow = ref({
   selectedPoint: null
 })
 
-// UI状态
+// UI state
 const chatDrawerVisible = ref(false)
 const logDrawerVisible = ref(false)
 const unreadChatCount = ref(0)
@@ -117,7 +117,7 @@ const llmModel = ref('')
 const logs = ref([])
 const logContainer = ref(null)
 
-// 当前步骤组件
+// Current step component
 const currentStepComponent = computed(() => {
   const components = {
     1: Step1_UrlInput,
@@ -128,7 +128,7 @@ const currentStepComponent = computed(() => {
   return components[currentStep.value]
 })
 
-// 当前步骤的props
+// Current step props
 const currentStepProps = computed(() => {
   if (currentStep.value === 2) {
     return {
@@ -148,24 +148,24 @@ const currentStepProps = computed(() => {
   return {}
 })
 
-// 步骤导航处理
+// Step navigation handling
 const handleStepNext = (data) => {
   if (currentStep.value === 1) {
-    // 步骤1 → 步骤2
+    // Step 1 → Step 2
     workflow.value.targetUrl = data.url
     workflow.value.maxDepth = data.maxDepth
     workflow.value.maxPages = data.maxPages
     currentStep.value = 2
     addLog('info', `Started crawling: ${data.url}`)
   } else if (currentStep.value === 2) {
-    // 步骤2 → 步骤3
+    // Step 2 → Step 3
     workflow.value.crawlResult = data
     currentStep.value = 3
     const surfaceCount = data.surfaces?.length || 0
     const highValueCount = data.analysis?.high_value_surfaces?.length || surfaceCount
     addLog('success', `Crawling completed, found ${surfaceCount} attack surfaces, ${highValueCount} high-value targets`)
   } else if (currentStep.value === 3) {
-    // 步骤3 → 步骤4
+    // Step 3 → Step 4
     workflow.value.selectedPoint = data
     currentStep.value = 4
     addLog('info', `Selected injection point: ${data.method} ${data.param_name || data.url}`)
@@ -205,14 +205,14 @@ const handleReset = () => {
   ElMessage.success('Testing complete, reset')
 }
 
-// 应用Payload（从Shadow面板）
+// Apply Payload (from Shadow panel)
 const handleApplyPayload = (payload) => {
-  // 这里可以通过事件总线或状态管理传递给Step4
-  // 暂时只显示消息
+  // Can pass to Step4 via event bus or state management
+  // For now just show message
   ElMessage.info('Payload applied')
 }
 
-// 添加日志
+// Add log
 const addLog = (level, message) => {
   logs.value.push({
     level,
@@ -221,7 +221,7 @@ const addLog = (level, message) => {
   })
 }
 
-// 日志图标
+// Log icon
 const getLevelIcon = (level) => {
   const icons = {
     info: 'ℹ️',
@@ -233,13 +233,13 @@ const getLevelIcon = (level) => {
   return icons[level] || 'ℹ️'
 }
 
-// 格式化时间
+// Format time
 const formatTime = (timestamp) => {
   const date = new Date(timestamp)
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`
 }
 
-// 检查LLM状态
+// Check LLM status
 const checkLLMStatus = async () => {
   try {
     const res = await axios.get('/api/llm-status')
@@ -252,7 +252,7 @@ const checkLLMStatus = async () => {
   }
 }
 
-// 自动滚动日志
+// Auto-scroll log
 watch(logs, () => {
   nextTick(() => {
     if (logContainer.value) {
@@ -261,7 +261,7 @@ watch(logs, () => {
   })
 }, { deep: true })
 
-// 生命周期
+// Lifecycle
 onMounted(() => {
   checkLLMStatus()
   addLog('success', 'ShadowPen started - Intelligent XSS Scanner')
@@ -331,7 +331,7 @@ onMounted(() => {
   overflow-y: auto;
 }
 
-/* 悬浮按钮 */
+/* Floating button */
 .chat-fab {
   position: fixed;
   right: 30px;
@@ -374,7 +374,7 @@ onMounted(() => {
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
 }
 
-/* 日志抽屉 */
+/* Log drawer */
 .drawer-header {
   width: 100%;
   display: flex;
@@ -480,7 +480,7 @@ onMounted(() => {
   border-left-color: #f56c6c;
 }
 
-/* 过渡动画 */
+/* Transition animation */
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s, transform 0.3s;
 }
@@ -495,7 +495,7 @@ onMounted(() => {
   transform: translateX(-20px);
 }
 
-/* 响应式 */
+/* Responsive */
 @media (max-width: 1200px) {
   .shadow-aside {
     display: none;

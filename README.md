@@ -148,9 +148,7 @@ go install github.com/jaeles-project/gospider@latest
 playwright install
 
 # Configure environment
-export OPENAI_API_KEY="your-key-here"
-export OPENAI_BASE_URL="https://api.openai.com/v1"
-export OPENAI_MODEL="gpt-4o-mini"
+cp .env.example .env  # Then edit .env with your actual API key
 
 # Start server
 uvicorn app:app --host 0.0.0.0 --port 8000

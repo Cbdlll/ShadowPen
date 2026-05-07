@@ -1,26 +1,26 @@
 """
-工具模块：去重引擎
+Utils module: Deduplication Engine
 
-基于指纹的攻击面去重机制
+Fingerprint-based attack surface deduplication mechanism
 """
 from typing import List, Set
 from ..models import AttackSurface
 
 
 class DeduplicationEngine:
-    """去重引擎"""
+    """Deduplication Engine"""
     
     def __init__(self):
         self._seen_fingerprints: Set[str] = set()
     
     def add(self, surface: AttackSurface) -> bool:
-        """添加攻击面，如果已存在则返回 False
-        
+        """Add an attack surface. Returns False if it already exists.
+
         Args:
-            surface: 攻击面对象
-            
+            surface: Attack surface object
+
         Returns:
-            bool: True 表示是新记录，False 表示重复
+            bool: True means new record, False means duplicate
         """
         if surface.fingerprint in self._seen_fingerprints:
             return False
@@ -29,13 +29,13 @@ class DeduplicationEngine:
         return True
     
     def deduplicate(self, surfaces: List[AttackSurface]) -> List[AttackSurface]:
-        """批量去重
-        
+        """Batch deduplication
+
         Args:
-            surfaces: 攻击面列表
-            
+            surfaces: List of attack surfaces
+
         Returns:
-            去重后的攻击面列表
+            Deduplicated list of attack surfaces
         """
         unique_surfaces = []
         for surface in surfaces:
@@ -44,22 +44,22 @@ class DeduplicationEngine:
         return unique_surfaces
     
     def reset(self):
-        """重置去重记录"""
+        """Reset deduplication records"""
         self._seen_fingerprints.clear()
     
     def size(self) -> int:
-        """返回已记录的唯一指纹数量"""
+        """Return the number of recorded unique fingerprints"""
         return len(self._seen_fingerprints)
     
     @staticmethod
     def deduplicate_list(surfaces: List[AttackSurface]) -> List[AttackSurface]:
-        """静态方法：对列表进行去重
-        
+        """Static method: deduplicate a list
+
         Args:
-            surfaces: 攻击面列表
-            
+            surfaces: List of attack surfaces
+
         Returns:
-            去重后的攻击面列表
+            Deduplicated list of attack surfaces
         """
         seen = set()
         unique = []

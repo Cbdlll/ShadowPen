@@ -8,7 +8,7 @@ from llm import generate_mutations
 
 app = FastAPI()
 
-# 内存存储
+# In-memory storage
 VULNERABILITY_QUEUE = []
 CONNECTED_CLIENTS: List[WebSocket] = []
 
@@ -18,14 +18,14 @@ class VerifyRequest(BaseModel):
 
 async def broadcast_log(message: str, type: str = "info"):
     """
-    广播日志到所有连接的客户端
+    Broadcast log to all connected clients
     """
     log_entry = {
         "type": "log",
         "data": {
             "message": message,
             "level": type,
-            "timestamp": str(uuid.uuid4()) # 简单起见用 UUID 或时间戳
+            "timestamp": str(uuid.uuid4()) # Use UUID or timestamp for simplicity
         }
     }
     for client in CONNECTED_CLIENTS:
@@ -36,11 +36,11 @@ async def broadcast_log(message: str, type: str = "info"):
 
 async def shadow_loop(target_url: str, original_payload: str):
     """
-    影子循环：变异并验证
+    Shadow loop: mutate and verify
     """
     await broadcast_log(f"Starting Shadow Mode for: {target_url}", "info")
     
-    # 1. 调用 LLM 生成变异体
+    # 1. Call LLM to generate mutations
     await broadcast_log(f"Requesting LLM mutations for payload: {original_payload}...", "info")
     mutations = await generate_mutations(original_payload)
     
@@ -50,7 +50,7 @@ async def shadow_loop(target_url: str, original_payload: str):
 
     await broadcast_log(f"LLM Generated {len(mutations)} mutations: {mutations}", "success")
 
-    # 2. 并行验证变异体
+    # 2. Verify mutations in parallel
     tasks = []
     for m in mutations:
         await broadcast_log(f"Queuing verification for mutation: {m}", "info")
@@ -70,7 +70,7 @@ async def shadow_loop(target_url: str, original_payload: str):
     
     results = await asyncio.gather(*tasks)
     
-    # 3. 处理结果
+    # 3. Process results
     found_any = False
     for mutation, result in zip(mutations, results):
         if result["success"]:
@@ -84,7 +84,7 @@ async def shadow_loop(target_url: str, original_payload: str):
             VULNERABILITY_QUEUE.append(vuln_data)
             await broadcast_log(f"VULNERABILITY CONFIRMED: {mutation}", "danger")
             
-            # 4. 实时通知前端
+            # 4. Notify frontend in real-time
             for client in CONNECTED_CLIENTS:
                 try:
                     await client.send_json({"type": "vuln_found", "data": vuln_data})
@@ -99,7 +99,7 @@ async def shadow_loop(target_url: str, original_payload: str):
 @app.get("/api/llm-status")
 async def check_llm_status():
     """
-    检查 LLM 环境变量配置状态
+    Check LLM environment variable configuration status
     """
     from llm import BASE_URL, API_KEY, MODEL
     is_configured = all([BASE_URL, API_KEY, MODEL])
@@ -111,10 +111,10 @@ async def check_llm_status():
 
 @app.post("/api/verify")
 async def verify_endpoint(req: VerifyRequest, background_tasks: BackgroundTasks):
-    # 主循环：同步验证
+    # Main loop: synchronous verification
     result = await verify_payload(req.target_url, req.payload)
     
-    # 如果失败，触发影子循环
+    # If failed, trigger shadow loop
     if not result["success"]:
         background_tasks.add_task(shadow_loop, req.target_url, req.payload)
         
@@ -125,14 +125,31 @@ class CrawlRequest(BaseModel):
     url: str
     max_pages: int = 10
 
+def normalize_target_url(url: str) -> str:
+    """Normalize common target URL input mistakes before crawling."""
+    normalized = url.strip()
+    lower = normalized.lower()
+
+    for scheme in ("http://", "https://"):
+        if lower.startswith(scheme):
+            rest = normalized[len(scheme):]
+            if rest.lower().startswith(("http://", "https://")):
+                return normalize_target_url(rest)
+            return normalized
+
+    if "://" not in normalized:
+        return f"http://{normalized}"
+
+    return normalized
+
 @app.post("/api/crawl")
 async def crawl_endpoint(req: CrawlRequest):
-    """爬虫功能 - 使用完整的 XSSScanner"""
+    """Crawling functionality - uses full XSSScanner"""
     try:
         from crawler import XSSScanner, ScannerConfig
         import json
         
-        # 配置扫描器
+        # Configure scanner
         config = ScannerConfig(
             MAX_DEPTH=2,
             MAX_ACTIONS_PER_PAGE=50,
@@ -142,10 +159,11 @@ async def crawl_endpoint(req: CrawlRequest):
         
         scanner = XSSScanner(config)
         
-        # 执行扫描
-        result_file = await scanner.scan(req.url)
+        # Execute scan
+        target_url = normalize_target_url(req.url)
+        result_file = await scanner.scan(target_url)
         
-        # 读取结果文件
+        # Read result file
         with open(result_file, 'r', encoding='utf-8') as f:
             surfaces = json.load(f)
         
@@ -170,19 +188,19 @@ class AnalyzeSurfacesRequest(BaseModel):
 @app.post("/api/analyze-surfaces")
 async def analyze_surfaces_endpoint(req: AnalyzeSurfacesRequest):
     """
-    LLM 分析攻击面 - SSE 流式输出
+    LLM attack surface analysis - SSE streaming output
     """
     from fastapi.responses import StreamingResponse
     from attack_surface_analyzer import analyze_attack_surfaces
     import json
     
-    # 检查 LLM 配置
+    # Check LLM configuration
     from llm import BASE_URL, API_KEY, MODEL
     if not all([BASE_URL, API_KEY, MODEL]):
         return {"error": "LLM not configured"}
-    
+
     async def generate_stream():
-        """生成 SSE 流"""
+        """Generate SSE stream"""
         try:
             async for chunk in analyze_attack_surfaces(req.surfaces):
                 yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
@@ -214,30 +232,30 @@ class ChatRequest(BaseModel):
 @app.post("/api/chat")
 async def chat_endpoint(req: ChatRequest):
     """
-    LLM 聊天端点 - SSE 流式输出
+    LLM chat endpoint - SSE streaming output
     """
     from fastapi.responses import StreamingResponse
     import httpx
     import json
     from prompts import CHAT_SYSTEM_PROMPT
     
-    # 检查 LLM 配置
+    # Check LLM configuration
     from llm import BASE_URL, API_KEY, MODEL
     if not all([BASE_URL, API_KEY, MODEL]):
         return {"error": "LLM not configured"}
-    
-    # 构建消息列表
+
+    # Build message list
     messages = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]
     
-    # 添加历史消息
+    # Add historical messages
     for msg in req.history:
         messages.append({"role": msg.role, "content": msg.content})
     
-    # 添加当前用户消息
+    # Add current user message
     messages.append({"role": "user", "content": req.message})
     
     async def generate_stream():
-        """生成 SSE 流"""
+        """Generate SSE stream"""
         try:
             async with httpx.AsyncClient(timeout=300.0) as client:
                 async with client.stream(
@@ -268,23 +286,23 @@ async def chat_endpoint(req: ChatRequest):
                                 chunk = json.loads(data_str)
                                 choices = chunk.get("choices", [])
                                 
-                                # 检查 choices 是否为空
+                                # Check if choices is empty
                                 if not choices:
                                     print(f"Warning: Empty choices in chunk: {chunk}")
                                     continue
                                 
-                                # 检查 choices[0] 是否存在
+                                # Check if choices[0] exists
                                 if len(choices) == 0:
                                     print(f"Warning: choices list is empty")
                                     continue
                                     
                                 delta = choices[0].get("delta", {})
                                 
-                                # 处理 thinking (如果模型支持)
+                                # Handle thinking (if model supports it)
                                 if "thinking" in delta:
                                     yield f"data: {json.dumps({'type': 'thinking', 'content': delta['thinking']})}\n\n"
                                 
-                                # 处理 content
+                                # Handle content
                                 if "content" in delta:
                                     yield f"data: {json.dumps({'type': 'content', 'content': delta['content']})}\n\n"
                                     
@@ -324,7 +342,7 @@ async def websocket_endpoint(websocket: WebSocket):
     CONNECTED_CLIENTS.append(websocket)
     try:
         while True:
-            # 保持连接，也可以接收前端的心跳
+            # Keep connection alive; can also receive frontend heartbeats
             await websocket.receive_text()
     except WebSocketDisconnect:
         CONNECTED_CLIENTS.remove(websocket)

@@ -1,48 +1,52 @@
 """
-GoSpider 封装模块
+GoSpider Wrapper Module
 
-封装 GoSpider 命令行工具，用于广度 URL 发现
+Wraps the GoSpider command-line tool for broad URL discovery
 """
 import asyncio
-import subprocess
 import json
 import logging
+import os
+import shutil
 from typing import List, Optional
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 
 class GoSpiderWrapper:
-    """GoSpider 工具封装类
-    
-    功能：
-    - 调用 GoSpider 进行 URL 发现
-    - 解析 GoSpider 输出
-    - 降级策略（未安装时返回单 URL）
+    """GoSpider tool wrapper class
+
+    Features:
+    - Call GoSpider for URL discovery
+    - Parse GoSpider output
+    - Fallback strategy (returns single URL when not installed)
     """
     
     def __init__(self, gospider_path: str = None, timeout: int = 120):
         """
         Args:
-            gospiper_path: GoSpider 可执行文件路径（默认优先使用 bin/gospider）
-            timeout: 执行超时时间（秒）
+            gospiper_path: GoSpider executable path (defaults to bin/gospider)
+            timeout: Execution timeout in seconds
         """
-        # 优先使用项目 bin 目录中的 gospider
+        # Prefer the binary installed in the image/system PATH. The checked-in
+        # bin/gospider may be built for a different CPU architecture.
         if gospider_path is None:
-            import os
-            project_gospider = os.path.join(os.path.dirname(__file__), '../../bin/gospider')
-            if os.path.exists(project_gospider):
-                gospider_path = project_gospider
+            system_gospider = shutil.which("gospider")
+            if system_gospider:
+                gospider_path = system_gospider
             else:
-                gospider_path = "gospider"  # 降级到系统路径
+                project_gospider = os.path.join(os.path.dirname(__file__), '../../bin/gospider')
+                if os.path.exists(project_gospider) and os.access(project_gospider, os.X_OK) and os.path.getsize(project_gospider) > 1000:
+                    gospider_path = project_gospider
+                else:
+                    gospider_path = "gospider"  # Fall back to system PATH
         
         self.gospider_path = gospider_path
         self.timeout = timeout
         self._is_available = None
     
     async def check_availability(self) -> bool:
-        """检查 GoSpider 是否可用"""
+        """Check whether GoSpider is available"""
         if self._is_available is not None:
             return self._is_available
         
@@ -55,13 +59,13 @@ class GoSpiderWrapper:
             )
             await asyncio.wait_for(proc.communicate(), timeout=5)
             self._is_available = True
-            logger.info(f"GoSpider 可用: {self.gospider_path}")
+            logger.info(f"GoSpider available: {self.gospider_path}")
             return True
-        except (FileNotFoundError, asyncio.TimeoutError):
+        except (FileNotFoundError, OSError, asyncio.TimeoutError) as e:
             self._is_available = False
             logger.warning(
-                f"GoSpider 未找到或不可用: {self.gospider_path}\n"
-                "提示：安装命令 'GO111MODULE=on go install github.com/jaeles-project/gospider@latest'"
+                f"GoSpider not found or unavailable: {self.gospider_path} ({e})\n"
+                "Hint: install with 'GO111MODULE=on go install github.com/jaeles-project/gospider@latest'"
             )
             return False
     
@@ -72,38 +76,38 @@ class GoSpiderWrapper:
         depth: int = 3,
         timeout: Optional[int] = None
     ) -> List[str]:
-        """使用 GoSpider 发现 URL
-        
+        """Use GoSpider to discover URLs
+
         Args:
-            target: 目标 URL
-            concurrency: 并发数
-            depth: 爬取深度
-            timeout: 超时时间（覆盖默认值）
-            
+            target: Target URL
+            concurrency: Concurrency level
+            depth: Crawling depth
+            timeout: Timeout in seconds (overrides default)
+
         Returns:
-            发现的 URL 列表
+            List of discovered URLs
         """
-        # 检查可用性
+        # Check availability
         if not await self.check_availability():
-            logger.info("降级模式：仅返回目标 URL")
+            logger.info("Fallback mode: returning target URL only")
             return [target]
         
         timeout = timeout or self.timeout
         
         try:
-            # 构建命令
+            # Build command
             cmd = [
                 self.gospider_path,
                 "-s", target,
                 "-c", str(concurrency),
                 "-d", str(depth),
-                "--json",  # JSON 输出
-                "--no-redirect",  # 不跟随重定向
+                "--json",  # JSON output
+                "--no-redirect",  # Do not follow redirects
             ]
             
-            logger.info(f"执行 GoSpider: {' '.join(cmd)}")
+            logger.info(f"Executing GoSpider: {' '.join(cmd)}")
             
-            # 执行命令
+            # Execute command
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
@@ -117,30 +121,30 @@ class GoSpiderWrapper:
                 )
             except asyncio.TimeoutError:
                 proc.kill()
-                logger.error(f"GoSpider 执行超时 ({timeout}s)")
+                logger.error(f"GoSpider execution timed out ({timeout}s)")
                 return [target]
             
-            # 解析输出
+            # Parse output
             urls = self._parse_output(stdout.decode('utf-8', errors='ignore'))
             
             if stderr:
                 logger.debug(f"GoSpider stderr: {stderr.decode('utf-8', errors='ignore')[:200]}")
             
-            logger.info(f"GoSpider 发现 {len(urls)} 个 URL")
+            logger.info(f"GoSpider discovered {len(urls)} URLs")
             return urls if urls else [target]
             
         except Exception as e:
-            logger.error(f"GoSpider 执行失败: {e}")
+            logger.error(f"GoSpider execution failed: {e}")
             return [target]
     
     def _parse_output(self, output: str) -> List[str]:
-        """解析 GoSpider 输出
-        
+        """Parse GoSpider output
+
         Args:
-            output: GoSpider 标准输出
-            
+            output: GoSpider standard output
+
         Returns:
-            URL 列表
+            List of URLs
         """
         urls = set()
         
@@ -150,17 +154,17 @@ class GoSpiderWrapper:
                 continue
             
             try:
-                # GoSpider 以 JSON 格式输出
+                # GoSpider outputs in JSON format
                 data = json.loads(line)
                 
-                # 提取 URL
+                # Extract URL
                 if "url" in data:
                     urls.add(data["url"])
                 elif "output" in data:
                     urls.add(data["output"])
                     
             except json.JSONDecodeError:
-                # 非 JSON 格式，尝试直接提取 URL
+                # Non-JSON format, try to extract URL directly
                 if line.startswith('http://') or line.startswith('https://'):
                     urls.add(line)
         
@@ -168,9 +172,9 @@ class GoSpiderWrapper:
     
     @staticmethod
     def install_hint() -> str:
-        """返回安装提示"""
+        """Return installation hint"""
         return (
-            "GoSpider 未安装。安装方法：\n"
+            "GoSpider is not installed. Installation method:\n"
             "  GO111MODULE=on go install github.com/jaeles-project/gospider@latest\n"
-            "或者使用降级模式仅扫描单个 URL。"
+            "Or use fallback mode to scan a single URL only."
         )

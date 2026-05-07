@@ -1,7 +1,7 @@
 """
-URL 分析器模块
+URL Analyzer Module
 
-智能分析 URL 结构，识别路径参数和查询参数
+Intelligently analyze URL structure, identify path and query parameters
 """
 from typing import List, Tuple
 import re
@@ -13,51 +13,51 @@ logger = logging.getLogger(__name__)
 
 
 class URLAnalyzer:
-    """URL 模式分析器
-    
-    功能:
-    - 识别 RESTful 路径参数
-    - 提取查询参数
-    - URL 模式规范化
+    """URL Pattern Analyzer
+
+    Features:
+    - Identify RESTful path parameters
+    - Extract query parameters
+    - URL pattern normalization
     """
-    
-    # RESTful 参数模式
+
+    # RESTful parameter patterns
     PATTERNS = {
-        'numeric': re.compile(r'^[0-9]+$'),           # 纯数字: 123
+        'numeric': re.compile(r'^[0-9]+$'),           # Numeric only: 123
         'uuid': re.compile(r'^[a-f0-9-]{32,36}$'),    # UUID: a1b2-c3d4-...
-        'id_prefix': re.compile(r'^(id|ID)_?\d+$'),   # ID 前缀: id_123
+        'id_prefix': re.compile(r'^(id|ID)_?\d+$'),   # ID prefix: id_123
         'hash': re.compile(r'^[a-f0-9]{32,64}$'),     # Hash: md5/sha256
     }
     
     def analyze_url(self, url: str, method: str = "GET") -> List[AttackSurface]:
-        """分析 URL，提取攻击面
-        
+        """Analyze URL and extract attack surfaces
+
         Args:
-            url: 目标 URL
-            method: HTTP 方法
-            
+            url: Target URL
+            method: HTTP method
+
         Returns:
-            攻击面列表
+            List of attack surfaces
         """
         surfaces = []
         
-        # 1. 提取查询参数
+        # 1. Extract query parameters
         surfaces.extend(self._extract_query_params(url, method))
         
-        # 2. 检测路径参数
+        # 2. Detect path parameters
         surfaces.extend(self._detect_path_params(url, method))
         
         return surfaces
     
     def _extract_query_params(self, url: str, method: str) -> List[AttackSurface]:
-        """提取查询参数"""
+        """Extract query parameters"""
         surfaces = []
         
         try:
             parsed = urlparse(url)
             params = parse_qs(parsed.query)
             
-            # 基础 URL（不含查询字符串）
+            # Base URL (without query string)
             base_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
             
             for param_name, values in params.items():
@@ -71,12 +71,12 @@ class URLAnalyzer:
                 ))
                 
         except Exception as e:
-            logger.debug(f"查询参数提取失败: {e}")
+            logger.debug(f"Query parameter extraction failed: {e}")
         
         return surfaces
     
     def _detect_path_params(self, url: str, method: str) -> List[AttackSurface]:
-        """检测 RESTful 路径参数"""
+        """Detect RESTful path parameters"""
         surfaces = []
         
         try:
@@ -84,18 +84,18 @@ class URLAnalyzer:
             path_segments = [s for s in parsed.path.split('/') if s]
             
             for idx, segment in enumerate(path_segments):
-                # 检查是否匹配任何参数模式
+                # Check if matches any parameter pattern
                 param_type_name = self._match_param_pattern(segment)
                 
                 if param_type_name:
-                    # 构建路径模式 URL
+                    # Build path pattern URL
                     normalized_path = self._normalize_path(path_segments, idx)
                     pattern_url = f"{parsed.scheme}://{parsed.netloc}{normalized_path}"
                     
                     surfaces.append(AttackSurface(
                         url=pattern_url,
                         method=method,
-                        param_name=segment,  # 原始值作为参数名
+                        param_name=segment,  # Original value as parameter name
                         param_type=ParamType.PATH_PARAM,
                         source=SourceType.URL_ANALYSIS,
                         context={
@@ -106,18 +106,18 @@ class URLAnalyzer:
                     ))
                     
         except Exception as e:
-            logger.debug(f"路径参数检测失败: {e}")
+            logger.debug(f"Path parameter detection failed: {e}")
         
         return surfaces
     
     def _match_param_pattern(self, segment: str) -> str | None:
-        """检查路径片段是否匹配参数模式
-        
+        """Check if path segment matches parameter pattern
+
         Args:
-            segment: 路径片段
-            
+            segment: Path segment
+
         Returns:
-            匹配的模式名称，如果不匹配返回 None
+            Matched pattern name, None if no match
         """
         for pattern_name, regex in self.PATTERNS.items():
             if regex.match(segment):
@@ -125,14 +125,14 @@ class URLAnalyzer:
         return None
     
     def _normalize_path(self, segments: List[str], param_index: int) -> str:
-        """规范化路径，将参数位置替换为占位符
-        
+        """Normalize path, replace parameter position with placeholder
+
         Args:
-            segments: 路径片段列表
-            param_index: 参数所在位置
-            
+            segments: Path segment list
+            param_index: Parameter position
+
         Returns:
-            规范化的路径
+            Normalized path
         """
         normalized = segments.copy()
         normalized[param_index] = "{param}"
